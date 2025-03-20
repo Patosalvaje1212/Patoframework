@@ -18,6 +18,8 @@ public class Entity
     /// <remarks>
     /// Every Id is unique to that Entity. Use GameController.I.entities[] to find an Entity by its Id
     /// </remarks>
+
+    [InspectorShowOrder(6)]
     public ulong Id { get; private set; }
 
     /// <summary>
@@ -38,6 +40,7 @@ public class Entity
     /// <summary>
     /// Local position of the Entity, relative to its Parent ( if it has any )
     /// </summary>
+    [InspectorShowOrder(3)]
     public Vector2 LocalPosition;
 
 
@@ -58,7 +61,7 @@ public class Entity
     /// <remarks>
     /// If no Parent Entities exist, its equal to LocalPosition 
     /// </remarks>
-    [InspectorNonEditable, JsonIgnore]
+    [InspectorNonEditable, JsonIgnore, InspectorShowOrder(2)]
     public Vector2 GlobalPosition
     {
         get
@@ -76,6 +79,7 @@ public class Entity
     /// <summary>
     /// If enabled, the Behaviours of this Entity get updated each frame
     /// </summary>
+    [InspectorShowOrder(2)]
     public bool ReceiveUpdates 
     {
         get => receiveUpdates;
@@ -95,6 +99,7 @@ public class Entity
     /// <summary>
     /// If disabled, this Entity and its Behaviours will act like if they didnt exist
     /// </summary>
+    [InspectorShowOrder(5)]
     public bool Active
     {
         get

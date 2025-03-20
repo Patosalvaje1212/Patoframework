@@ -8,6 +8,7 @@ using PatoframeWork.Rendering;
 using ImGuiNET;
 using Raylib_cs;
 using System.Diagnostics;
+using System.Collections;
 
 namespace PatoframeWork;
 
@@ -162,7 +163,16 @@ public static class InspectorVisual
             ImGui.SeparatorText("Files:");
 
             ImGui.BeginGroup();
-            DrawFileSelector();
+            
+            string? filePath = null;
+            string? fileName = null;
+            if(DrawFileSelector(".json", ref filePath, ref fileName)) 
+            {
+                GameController.I.SaveLocation = filePath;
+                GameController.I.fileSaveName = fileName;
+                GameController.I.LoadScene();
+                OpenFileSelector = false;
+            }
                 
             
 
@@ -213,36 +223,16 @@ public static class InspectorVisual
 
             ImGui.SeparatorText("Files:");
 
-            ImGui.BeginGroup();
-            DrawFileSelector(false);
-
-           
-            
-
-            ImGui.EndGroup();
-
-            ImGui.Separator();
-
-            ImGui.BeginGroup();
-            if(ImGui.Button("Save Data"))
+            string? filePath = null;
+            string? fileName = null;
+            if(DrawFileSelector(null, ref filePath, ref fileName)) 
             {
-                
-                GameController.I.SaveLocation = Path.GetDirectoryName(SaveLocation);
-                GameController.I.fileSaveName = SaveName;
-
-                if(!String.IsNullOrEmpty(SaveName))
-                {
-                    SaveFileSelector = false;
-
-                    GameController.I.SaveScene();
-                } else
-                {
-                    ImGui.OpenPopup("Cant be empty");
-                }
-
-                
+                GameController.I.SaveLocation = filePath;
+                GameController.I.SaveScene();
+                SaveFileSelector = false;
             }
-            ImGui.EndGroup();
+                            
+
 
             ImGui.EndPopup();
 
@@ -281,13 +271,19 @@ public static class InspectorVisual
     // Draw Properties Inspector
     static void DrawEntityInfo(Entity entity)
     {
-        if(entity.Active) ImGui.Text(entity.Name);
+        if(entity.Active)
+        {
+            if(ImGui.InputText("Name:", ref entity.Name, 50))
+            {
+                if(entity.Name == "") entity.Name = " ";
+            }
+        }
         else ImGui.TextDisabled(entity.Name);
 
         PropertyInfo[] propertyInfos = typeof(Entity).GetProperties();
         FieldInfo[] fieldInfos = typeof(Entity).GetFields();
 
-        DrawPropertiesAndFields(entity, propertyInfos, fieldInfos);
+        DrawPropertiesAndFields(entity, null, propertyInfos, fieldInfos);
 
         ImGui.SeparatorText("Properties");
 
@@ -302,7 +298,7 @@ public static class InspectorVisual
                 PropertyInfo[] behPropertyInfos = beh.GetType().GetProperties();
                 FieldInfo[] behFieldInfos = beh.GetType().GetFields();
 
-                DrawPropertiesAndFields(entity, behPropertyInfos, behFieldInfos);
+                DrawPropertiesAndFields(null, beh, behPropertyInfos, behFieldInfos);
 
                 ImGui.EndGroup();
                 ImGui.Separator();
@@ -311,128 +307,172 @@ public static class InspectorVisual
         }
     }
 
-    // Draw Individual Properties
-    static void DrawPropertiesAndFields(Entity entity, PropertyInfo[] propertyInfos, FieldInfo[] fieldInfos)
+    static object?[] GetOrderedArray(PropertyInfo[] propertyInfos, FieldInfo[] fieldInfos)
     {
+        var L = new ArrayList(propertyInfos);
+        L.AddRange(fieldInfos);
 
-        foreach (var property in propertyInfos)
+        var Ordererd = L.ToArray().OrderByDescending(res => 
         {
-            if(property.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
+            if(res is PropertyInfo pI) return pI.GetCustomAttribute<InspectorShowOrderAttribute>(false)?.order ?? 0;
+            if(res is FieldInfo fI) return fI.GetCustomAttribute<InspectorShowOrderAttribute>(false)?.order ?? 0;
 
+            return 0;
+        } );
 
-            var res = property.GetValue(entity);
+        return Ordererd.ToArray();
+    }
 
-            
-            if(property.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-            && res == null) continue;
+    // Draw Individual Properties
+    static void DrawPropertiesAndFields(Entity? entity, Behaviour? beh, PropertyInfo[] propertyInfos, FieldInfo[] fieldInfos)
+    {
+        int switchItem = 0;
 
-            bool defaultRender = false;
-            if(property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-            {
-                if(res is int intR)
-                {
-                    int refInt = intR;
-                    if(ImGui.InputInt(property.Name + " ", ref refInt))
-                    {
-                        property.SetValue(entity, refInt);
-                    }
-
-                } else  if(res is bool boolR)
-                {
-                    bool newB = boolR;
-                    if(ImGui.Checkbox(property.Name, ref newB))
-                    {
-                        property.SetValue(entity, newB);
-                    }
-
-                } else if(res is Vector2 v2)
-                {
-                    Vector2 refV = v2;
-                    if(ImGui.DragFloat2(property.Name + " X", ref refV, v2.Length() / 150))
-                    {
-                        property.SetValue(entity, refV);
-                    }
-
-                }else
-                {
-                    defaultRender = true;
-                }
-
-            } else
-            {
-                defaultRender = true;
-            }
-
-            if(defaultRender)
-            {
-                ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), property.Name + "  : ");
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null"); 
-            }
-
-            
-            
-        }
-
-        foreach (var field in fieldInfos)
+        var Ordered = GetOrderedArray(propertyInfos, fieldInfos); 
+        
+        for (int i = 0; i < Ordered.Length; i++)
         {
-            if(field.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
-
-
-            var res = field.GetValue(entity);
-
-            
-            if(field.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-            && res == null) continue;
-
-            bool defaultRender = false;
-            if(field.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-            {
-                if(res is int intR)
-                {
-                    int refInt = intR;
-                    if(ImGui.InputInt(field.Name + "", ref refInt))
-                    {
-                        field.SetValue(entity, refInt);
-                    }
-
-                } else  if(res is bool boolR)
-                {
-                    bool newB = boolR;
-                    if(ImGui.Checkbox(field.Name, ref newB))
-                    {
-                        field.SetValue(entity, newB);
-                    }
-
-                } else if(res is Vector2 v2)
-                {
-                    Vector2 refV = v2;
-                    if(ImGui.DragFloat2(field.Name + " X", ref refV, v2.Length() / 150))
-                    {
-                        field.SetValue(entity, refV);
-                    }
-
-                }else
-                {
-                    defaultRender = true;
-                }
-
-            } else
-            {
-                defaultRender = true;
-            }
-
-            if(defaultRender)
-            {
-                ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), field.Name + "  : ");
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null"); 
-            }
-            
+            if(Ordered[i] is PropertyInfo pI) DrawProperty(pI, entity, beh);
+            else if(Ordered[i] is FieldInfo fI) DrawField(fI, entity, beh);
         }
         
     } 
 
+
+    static void DrawProperty(PropertyInfo property, Entity? entity, Behaviour? beh)
+    {
+        if(property.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) return;
+
+
+        var res = property.GetValue(entity == null ? beh : entity);
+
+        
+        if(property.GetCustomAttributes(typeof(InspectorHideNullAttribute), false).Length > 0 
+        && res == null) return;
+        
+        bool defaultRender = false;
+        if(property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
+        {
+            if(res is int intR)
+            {
+                if(ImGui.InputInt(property.Name + " ", ref intR))
+                {
+                    property.SetValue(entity == null ? beh : entity, intR);
+                }
+
+            } else  if(res is bool boolR)
+            {
+                if(ImGui.Checkbox(property.Name, ref boolR))
+                {
+                    property.SetValue(entity == null ? beh : entity, boolR);
+                }
+
+            } else if(res is Vector2 v2)
+            {
+                if(ImGui.DragFloat2(property.Name + " X", ref v2, v2.Length() / 150))
+                {
+                    property.SetValue(entity == null ? beh : entity, v2);
+                }
+
+            } else if(res is string str)
+            {
+                if (ImGui.InputText(property.Name, ref str, 100))
+                {
+                    property.SetValue(entity == null ? beh : entity, str);
+                }
+
+            } else
+            {
+                defaultRender = true;
+            }
+
+        } else
+        {
+            defaultRender = true;
+        }
+
+        if(defaultRender)
+        {
+            ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), property.Name + "  : ");
+            ImGui.SameLine();
+            ImGui.Text(res?.ToString() ?? "Null"); 
+        }
+    }
+    
+    static void DrawField(FieldInfo property, Entity? entity, Behaviour? beh)
+    {
+        if(property.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) return;
+
+
+        var res = property.GetValue(entity == null ? beh : entity);
+
+        
+        if(property.GetCustomAttributes(typeof(InspectorHideNullAttribute), false).Length > 0 
+        && res == null) return;
+        
+        bool defaultRender = false;
+        if(property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
+        {
+            if(res is int intR)
+            {
+                if(ImGui.InputInt(property.Name + " ", ref intR))
+                {
+                    property.SetValue(entity == null ? beh : entity, intR);
+                }
+
+            } else  if(res is bool boolR)
+            {
+                if(ImGui.Checkbox(property.Name, ref boolR))
+                {
+                    property.SetValue(entity == null ? beh : entity, boolR);
+                }
+
+            } else if(res is Vector2 v2)
+            {
+                if(ImGui.DragFloat2(property.Name + " X", ref v2, v2.Length() / 150))
+                {
+                    property.SetValue(entity == null ? beh : entity, v2);
+                }
+
+            } else if(res is string str)
+            {
+                if (ImGui.InputText(property.Name, ref str, 100))
+                {
+                    property.SetValue(entity == null ? beh : entity, str);
+                }
+
+            } else if(res is Color col)
+            {
+                Vector4 newCol = Raylib.ColorNormalize(col);
+                if (ImGui.ColorEdit4(property.Name, ref newCol))
+                {
+                    property.SetValue(entity == null ? beh : entity, Raylib.ColorFromNormalized(newCol));
+                }
+
+            } else if(res is float newF)
+            {
+                if (ImGui.DragFloat(property.Name, ref newF))
+                {
+                    property.SetValue(entity == null ? beh : entity, newF);
+                }
+
+            } else
+            {
+                defaultRender = true;
+            }
+
+        } else
+        {
+            defaultRender = true;
+        }
+
+        if(defaultRender)
+        {
+            ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), property.Name + "  : ");
+            ImGui.SameLine();
+            ImGui.Text(res?.ToString() ?? "Null"); 
+        }
+    }
     
     // Draw Entity List
     static void DrawRecursiveList(Entity REntity)
@@ -468,47 +508,65 @@ public static class InspectorVisual
 
    
     // Draw File Selector (Choose only folder /// Choose only Json)
-    static void DrawFileSelector(bool limitToJson = true)
+    static bool DrawFileSelector(string? fileType, ref string? DestPath, ref string? FileName)
     {
-        
-        
-        List<string> files;
-
+        ImGui.BeginGroup();
         if(SaveLocation != null)
         {
-            files = [.. Directory.GetFileSystemEntries(SaveLocation).Where(res => (limitToJson && Path.GetExtension(res) == ".json") || Directory.Exists(res)).OrderBy(res => !Directory.Exists(res))];
+            List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).Where(res => (fileType != null && Path.GetExtension(res) == fileType) || Directory.Exists(res)).OrderBy(res => !Directory.Exists(res))];
 
             if(files.Count > 0)
             {
                 foreach (var file in files)
                 {
-                    if(Directory.Exists(file)) ImGui.Dummy(Vector2.One * 25);
+                    bool isDirectory = Directory.Exists(file);
+
+                    if(isDirectory) ImGui.Dummy(Vector2.One * 25);
                     else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
                     ImGui.SameLine();
 
-                    if(ImGui.Button(file))
+                    if(ImGui.ColorButton(file, Raylib.ColorNormalize(isDirectory ? Color.Gray : Color.Blue)))
                     {
                     
-                        GameController.I.SaveLocation = Path.GetDirectoryName(file);
+                        DestPath = Path.GetDirectoryName(file);
                         
 
-                        if(!Directory.Exists(file))
+                        if(!isDirectory)
                         {
-                            GameController.I.fileSaveName =  Path.GetFileName(file);
-                            OpenFileSelector = false;
-                            GameController.I.LoadScene();
+                            FileName =  Path.GetFileName(file);
+
+                            return true;
                         }
                         
                         SaveLocation = file;
-                        Console.WriteLine(GameController.I.SaveLocation + " - " + GameController.I.fileSaveName);
-
                     }
                 }
                 
             }
         } else
         throw new FileLoadException("Error while loading the Folder data. Please check the Engine has access to the requested folder");
-        
+
+        ImGui.EndGroup();
+
+        if(fileType == null)
+        {
+            ImGui.Separator();
+
+            ImGui.BeginGroup();
+            if(ImGui.Button("Select folder"))
+            {
+                DestPath = Path.GetDirectoryName(SaveLocation);
+                FileName = null;
+                
+                return true;
+            }
+            ImGui.EndGroup();
+        }
+
+        DestPath = null;
+        FileName = null;
+
+        return false;
     }
     
 

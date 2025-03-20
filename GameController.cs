@@ -75,7 +75,7 @@ public class GameController()
         // ----- Test Objects
         // TODO: Remplace them with Add Entity Button in GUI
         var a = new Entity("a") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2)} ;
-        a.AddBehaviour<RendererBehaviour>();
+        a.AddBehaviour<RendererBehaviour>().SetColor(Color.LightGray);
 
         a = new Entity("b") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 30} ;
         a.AddBehaviour<RendererBehaviour>().Size = 25;
@@ -124,16 +124,24 @@ public class GameController()
 
         #endif
         
-       
+
+        Texture2D test = LoadTexture("test.png");
+        int frames = 20;
+        Image test2 = LoadImageAnim("PlayerAnim.png", out frames);
+        Texture2D test2L = LoadTextureFromImage(test2);
+
+        Console.WriteLine(frames);
 
         while (!WindowShouldClose())
         {
             CurrentFrame ++;
 
             Update.Invoke();
-            CameraManager.I.UpdateCycle();
+            // Update Camera
+            CameraManager.I.UpdateCamera();
 	
-            var toRender = Renderers.OrderBy((res) => res.Order).Where((res) => res.Owner.Active).ToList();
+            // Filter renderers && order them by draw Order
+            var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
             BeginDrawing();
 
@@ -144,6 +152,8 @@ public class GameController()
 
             for (int i = 0; i < toRender.Count; i++)
             {
+                if(i == 0) DrawTexturePro(test2L, new Rectangle(Vector2.Zero, new Vector2(48, 32)), new Rectangle(Vector2.One, Vector2.One * 50), toRender[i].Owner.GlobalPosition, toRender[i].zRot, toRender[i].Color);
+                else
                 DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
             }
             
@@ -180,7 +190,7 @@ public class GameController()
     // Used by the Serializer to Open Data files, and load its content
     public void LoadScene()
     {
-        var data = File.ReadAllText(SaveLocation + "/" + fileSaveName);
+        var data = File.ReadAllText(SaveLocation + fileSaveName);
 
         var ConvertedData = JsonConvert.DeserializeObject<GameController>(data, settings);
 
@@ -201,7 +211,7 @@ public class GameController()
         
         string jsonStringGen = JsonConvert.SerializeObject(GameController.I, settings);
 
-        File.Delete(SaveLocation + "/" + fileSaveName + ".json");
-        File.WriteAllText(SaveLocation + "/"+ fileSaveName + ".json", jsonStringGen);
+        File.Delete(SaveLocation + fileSaveName);
+        File.WriteAllText(SaveLocation + fileSaveName, jsonStringGen);
     }
 }

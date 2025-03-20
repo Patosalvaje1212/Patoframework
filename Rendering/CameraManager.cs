@@ -29,28 +29,28 @@ public class CameraManager
         cam.Target = Vector2.Zero;
     }
 
-    public void UpdateCycle()
+    public void UpdateCamera()
     {
         if(freeRoam)
         {
             if(Raylib.IsKeyDown(KeyboardKey.D))
             {
-                cam.Offset += Vector2.UnitX * Velocity;
+                cam.Offset += Vector2.UnitX * -Velocity;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.A))
             {
-                cam.Offset += Vector2.UnitX * -Velocity;
+                cam.Offset += Vector2.UnitX * Velocity;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.W))
             {
-                cam.Offset += Vector2.UnitY * -Velocity;
+                cam.Offset += Vector2.UnitY * Velocity;
             }
 
             if(Raylib.IsKeyDown(KeyboardKey.S))
             {
-                cam.Offset += Vector2.UnitY * Velocity;
+                cam.Offset += Vector2.UnitY * -Velocity;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.Q))

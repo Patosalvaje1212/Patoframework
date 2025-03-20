@@ -7,5 +7,15 @@ public class InspectorNonEditableAttribute : Attribute
 {}
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-public class InspectorHideNull : Attribute
+public class InspectorHideNullAttribute : Attribute
 {}
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public class InspectorShowOrderAttribute : Attribute
+{
+    public int order;
+    public InspectorShowOrderAttribute(int Order)
+    {
+        order = Order;
+    }
+}
