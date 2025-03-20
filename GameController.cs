@@ -11,16 +11,23 @@ using rlImGui_cs;
 using ImGuiNET;
 using Newtonsoft.Json;
 
+
+namespace PatoframeWork;
 public class GameController()
 {
-    public static GameController? I;
-    public const bool DEBUG_MODE = true;
+    // Singleton : Static property referencing Instance data
+    public static GameController I = new();
+
+    // Amount of frames for each PhysicUpdate
     public const int PhysicFrameUpdate = 20;
 
-    
-    public string? saveLocation = "./";
+    // Save Location and Filename -- They get initialized after selecting a path
+    public string? SaveLocation = "./";
     public string? fileSaveName = "";
 
+
+    // Properties for the save system
+    // NOTE: Json saves get too heavy, set Formatting to Formatting.None
     readonly JsonSerializerSettings settings = new()
     {
         TypeNameHandling = TypeNameHandling.Auto,
@@ -28,16 +35,21 @@ public class GameController()
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
     };
 
+    // Every object that has to render
     [JsonIgnore]
-    public List<RendererBehaviour> renderers = [];
-    public Dictionary<ulong, Entity> entities = [];
+    public List<RendererBehaviour> Renderers = [];
 
+    // Dictionary binding every Entity to an Id
+    public Dictionary<ulong, Entity> Entities = [];
+
+
+    // Is called once per frame. Used to call Entity.SelfUpdate()
     [JsonIgnore]
     public Action? Update;
 
     
 
-    
+    // Frame Counter 
     public int CurrentFrame;
 
     public void MainThread()
@@ -50,7 +62,7 @@ public class GameController()
         
         MaximizeWindow();
 
-        entities = [];
+        Entities = [];
         
 
         CurrentFrame = 0;
@@ -59,8 +71,9 @@ public class GameController()
 
         Update = new(UpdateGame);
 
-
-
+        
+        // ----- Test Objects
+        // TODO: Remplace them with Add Entity Button in GUI
         var a = new Entity("a") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2)} ;
         a.AddBehaviour<RendererBehaviour>();
 
@@ -92,13 +105,13 @@ public class GameController()
 
         c.SetParent(a);
 
-
+        // ----
 
         
 
        
 
-
+        // Only edit mode Setups
         #if DEBUG
 
             CameraManager.I.freeRoam = true;
@@ -120,7 +133,7 @@ public class GameController()
             Update.Invoke();
             CameraManager.I.UpdateCycle();
 	
-            var toRender = renderers.OrderBy((res) => res.Order).Where((res) => res.owner.Active).ToList();
+            var toRender = Renderers.OrderBy((res) => res.Order).Where((res) => res.Owner.Active).ToList();
 
             BeginDrawing();
 
@@ -129,17 +142,15 @@ public class GameController()
 
             BeginMode2D(CameraManager.I.cam);
 
-            
-            
             for (int i = 0; i < toRender.Count; i++)
             {
-                DrawCircle((int)MathF.Round(toRender[i].owner.GlobalPosition.X), (int)MathF.Round(toRender[i].owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+                DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
             }
             
 
             EndMode2D();
 
-
+            // Draw all the Debug Windows
             #if DEBUG
 
                 RlImGui.Begin();
@@ -163,22 +174,22 @@ public class GameController()
         CloseWindow();
     }
 
-    void UpdateGame()
-    {
+    void UpdateGame() {}
 
-    }
 
+    // Used by the Serializer to Open Data files, and load its content
     public void LoadScene()
     {
-        string jsonStringGen = String.Empty;
-
-        var data = File.ReadAllText(saveLocation + "/" + fileSaveName);
+        var data = File.ReadAllText(SaveLocation + "/" + fileSaveName);
 
         var ConvertedData = JsonConvert.DeserializeObject<GameController>(data, settings);
 
-        I = ConvertedData;
+        if(ConvertedData != null) I = ConvertedData;
+        else throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
     }
 
+
+    // Used by the Serializer to Save all data to files
     public void SaveScene()
     {
         var settings = new JsonSerializerSettings
@@ -190,7 +201,7 @@ public class GameController()
         
         string jsonStringGen = JsonConvert.SerializeObject(GameController.I, settings);
 
-        File.Delete(saveLocation + "/" + fileSaveName + ".json");
-        File.WriteAllText(saveLocation + "/"+ fileSaveName + ".json", jsonStringGen);
+        File.Delete(SaveLocation + "/" + fileSaveName + ".json");
+        File.WriteAllText(SaveLocation + "/"+ fileSaveName + ".json", jsonStringGen);
     }
 }

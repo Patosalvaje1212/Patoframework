@@ -1,10 +1,10 @@
 
-
+using PatoframeWork;
 static class Program
 {
     static void Main()
     {
-        GameController.I = new GameController();
+        // Launch Start Program
         GameController.I.MainThread();   
     }
 }

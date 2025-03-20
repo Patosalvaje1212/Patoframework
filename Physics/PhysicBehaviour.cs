@@ -10,7 +10,7 @@ public class PhysicBehaviour : Behaviour
     public override void UpdateEffect()
     {
 
-        owner.GlobalPosition += Velocity;
+        Owner.GlobalPosition += Velocity;
 
         if(GameController.I.CurrentFrame % GameController.PhysicFrameUpdate == 0)
         {
@@ -25,7 +25,7 @@ public class PhysicBehaviour : Behaviour
 
     public override void OnAdd()
     {
-        owner.ReceiveUpdates = true;
+        Owner.ReceiveUpdates = true;
     }
 
     public override void OnRemove()
