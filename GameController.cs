@@ -13,22 +13,19 @@ using Newtonsoft.Json;
 
 
 namespace PatoframeWork;
-public class GameController()
+public static class GameController
 {
-    // Singleton : Static property referencing Instance data
-    public static GameController I = new();
-
     // Amount of frames for each PhysicUpdate
     public const int PhysicFrameUpdate = 20;
 
     // Save Location and Filename -- They get initialized after selecting a path
-    public string? SaveLocation = "./";
-    public string? fileSaveName = "";
+    public static string? SaveLocation = "./";
+    public static string? fileSaveName = "";
 
 
     // Properties for the save system
     // NOTE: Json saves get too heavy, set Formatting to Formatting.None
-    readonly JsonSerializerSettings settings = new()
+    static readonly JsonSerializerSettings settings = new()
     {
         TypeNameHandling = TypeNameHandling.Auto,
         Formatting = Formatting.Indented,
@@ -37,23 +34,25 @@ public class GameController()
 
     // Every object that has to render
     [JsonIgnore]
-    public List<RendererBehaviour> Renderers = [];
+    public static List<RendererBehaviour> Renderers = [];
 
     // Dictionary binding every Entity to an Id
-    public Dictionary<ulong, Entity> Entities = [];
+    public static Dictionary<ulong, Entity> Entities = [];
 
 
     // Is called once per frame. Used to call Entity.SelfUpdate()
     [JsonIgnore]
-    public Action? Update;
+    public static Action? Update;
 
     
 
     // Frame Counter 
-    public int CurrentFrame;
+    public static int CurrentFrame { get; private set; } = 0;
 
-    public void MainThread()
+    public static void MainThread()
     {
+        
+
         SetConfigFlags(ConfigFlags.ResizableWindow);
         SetConfigFlags(ConfigFlags.AlwaysRunWindow);
         SetConfigFlags(ConfigFlags.MaximizedWindow);
@@ -62,48 +61,16 @@ public class GameController()
         
         MaximizeWindow();
 
+
+        SetExitKey(KeyboardKey.Null);
+
         Entities = [];
-        
 
         CurrentFrame = 0;
         
         SetTargetFPS(60);
 
         Update = new(UpdateGame);
-
-        
-        // ----- Test Objects
-        // TODO: Remplace them with Add Entity Button in GUI
-        var a = new Entity("a") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2)} ;
-        a.AddBehaviour<RendererBehaviour>().SetColor(Color.LightGray);
-
-        a = new Entity("b") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 30} ;
-        a.AddBehaviour<RendererBehaviour>().Size = 25;
-
-
-        var b = new Entity("c") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 60};
-        b.AddBehaviour<PhysicBehaviour>().Velocity = Vector2.One * 2f;
-        b.AddBehaviour<RendererBehaviour>();
-        b.ReceiveUpdates = true;
-
-        a = new Entity("d") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 90} ;
-        a.AddBehaviour<RendererBehaviour>().Color = Color.Brown;
-        a.Active = false;
-
-        a = new Entity("e") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 120} ;
-        a.AddBehaviour<RendererBehaviour>().Color = Color.Green;
-
-        a.SetParent(b);
-
-        a = new Entity("f") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 120} ;
-        a.AddBehaviour<RendererBehaviour>().Color = Color.Green;
-
-        a.SetParent(b);
-
-        var c = new Entity("g") { LocalPosition = new Vector2(GetScreenWidth() / 2, GetScreenHeight() / 2) + Vector2.UnitX * 120} ;
-        c.AddBehaviour<RendererBehaviour>().Color = Color.Green;
-
-        c.SetParent(a);
 
         // ----
 
@@ -125,13 +92,6 @@ public class GameController()
         #endif
         
 
-        Texture2D test = LoadTexture("test.png");
-        int frames = 20;
-        Image test2 = LoadImageAnim("PlayerAnim.png", out frames);
-        Texture2D test2L = LoadTextureFromImage(test2);
-
-        Console.WriteLine(frames);
-
         while (!WindowShouldClose())
         {
             CurrentFrame ++;
@@ -143,6 +103,12 @@ public class GameController()
             // Filter renderers && order them by draw Order
             var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
+
+
+            if(IsKeyPressed(KeyboardKey.Minus)) Entities[1].Behaviours[0].CloneBehaviour();
+            if(IsKeyPressed(KeyboardKey.M)) Entities[1].Duplicate();
+            
+
             BeginDrawing();
 
             ClearBackground(Color.Beige);
@@ -150,18 +116,25 @@ public class GameController()
 
             BeginMode2D(CameraManager.I.cam);
 
+
+            if(true)
+            {
+            }
+
+
             for (int i = 0; i < toRender.Count; i++)
             {
-                if(i == 0) DrawTexturePro(test2L, new Rectangle(Vector2.Zero, new Vector2(48, 32)), new Rectangle(Vector2.One, Vector2.One * 50), toRender[i].Owner.GlobalPosition, toRender[i].zRot, toRender[i].Color);
-                else
                 DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
             }
             
 
-            EndMode2D();
-
+            
             // Draw all the Debug Windows
             #if DEBUG
+    
+    
+                EndMode2D();
+
 
                 RlImGui.Begin();
 
@@ -184,34 +157,35 @@ public class GameController()
         CloseWindow();
     }
 
-    void UpdateGame() {}
+    static void UpdateGame() {}
 
 
     // Used by the Serializer to Open Data files, and load its content
-    public void LoadScene()
+    public static void LoadScene()
     {
+        
         var data = File.ReadAllText(SaveLocation + fileSaveName);
 
-        var ConvertedData = JsonConvert.DeserializeObject<GameController>(data, settings);
+        // Clean up current entity list
+        foreach (var entity in Entities.ToList())
+        {
+            entity.Value.Delete();
+        }
 
-        if(ConvertedData != null) I = ConvertedData;
-        else throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
+
+        Dictionary<ulong, Entity>? ConvertedData = JsonConvert.DeserializeObject<Dictionary<ulong, Entity>>(data, settings);
+
+        if(ConvertedData != null) Entities = ConvertedData;
+        else
+        throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
     }
 
 
     // Used by the Serializer to Save all data to files
-    public void SaveScene()
-    {
-        var settings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.Auto,
-            Formatting = Formatting.Indented,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
-        
-        string jsonStringGen = JsonConvert.SerializeObject(GameController.I, settings);
+    public static void SaveScene()
+    {   
+        string jsonStringGen = JsonConvert.SerializeObject(Entities, settings);
 
-        File.Delete(SaveLocation + fileSaveName);
         File.WriteAllText(SaveLocation + fileSaveName, jsonStringGen);
     }
 }

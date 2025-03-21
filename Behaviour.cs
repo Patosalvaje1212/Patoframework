@@ -66,6 +66,28 @@ public static class BehaviourHelper
         throw new ArgumentException("Cannot add " + nameof(T) + " to an empty Entity");
     }
 
+    public static Behaviour AddBehaviour(this Entity entity, Type BehaviourType)
+    {
+        if(entity != null)
+        {
+            Behaviour? beh = (Behaviour?)Activator.CreateInstance(BehaviourType);
+
+            if(beh != null)
+            {
+                beh.Owner = entity;
+                entity.Behaviours.Add(beh);
+
+                beh.OnAdd();
+
+                return beh;
+            }
+            else
+            throw new ArgumentException("Could not find type of " + BehaviourType);
+        }
+        else
+        throw new ArgumentException("Cannot add " + BehaviourType + " to an empty Entity");
+    }
+
     /// <summary>
     /// Removes a target Behaviour from an entity
     /// </summary>
@@ -90,6 +112,23 @@ public static class BehaviourHelper
         }
 
         return null;
+    }
+
+    public static void CloneBehaviour(this Behaviour behaviour, Entity? target = null)
+    {
+        Behaviour newB;
+        if(target == null) newB = behaviour.Owner.AddBehaviour(behaviour.GetType());
+        else newB = target.AddBehaviour(behaviour.GetType());
+
+        foreach (var property in behaviour.GetType().GetProperties())
+        {
+            property.SetValue(newB, property.GetValue(behaviour));
+        }
+
+        foreach (var property in behaviour.GetType().GetFields())
+        {
+            property.SetValue(newB, property.GetValue(behaviour));
+        }
     }
     #endregion
 

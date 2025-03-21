@@ -1,3 +1,6 @@
+
+namespace PatoframeWork;
+
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
 public class InspectorHideAttribute : Attribute
 {}
@@ -11,11 +14,7 @@ public class InspectorHideNullAttribute : Attribute
 {}
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-public class InspectorShowOrderAttribute : Attribute
+public class InspectorShowOrderAttribute(int Order) : Attribute
 {
-    public int order;
-    public InspectorShowOrderAttribute(int Order)
-    {
-        order = Order;
-    }
+    public int order = Order;
 }

@@ -16,7 +16,7 @@ public class Entity
     /// Inmutable Id of an Entity
     /// </summary>
     /// <remarks>
-    /// Every Id is unique to that Entity. Use GameController.I.entities[] to find an Entity by its Id
+    /// Every Id is unique to that Entity. Use GameController.entities[] to find an Entity by its Id
     /// </remarks>
 
     [InspectorShowOrder(6)]
@@ -66,7 +66,7 @@ public class Entity
     {
         get
         {   
-            return (Parent != 0 ? GameController.I.Entities[Parent].GlobalPosition : Vector2.Zero) + LocalPosition;
+            return (Parent != 0 ? GameController.Entities[Parent].GlobalPosition : Vector2.Zero) + LocalPosition;
         }
         set
         {
@@ -87,15 +87,15 @@ public class Entity
         set
         {
             if(value && !receiveUpdates)
-            GameController.I.Update += SelfUpdate;
+            GameController.Update += SelfUpdate;
             if(!value && receiveUpdates)
-            GameController.I.Update -= SelfUpdate;
+            GameController.Update -= SelfUpdate;
 
             receiveUpdates = value;
         }   
     }
 
-    bool active = true;
+    private bool active = true;
     /// <summary>
     /// If disabled, this Entity and its Behaviours will act like if they didnt exist
     /// </summary>
@@ -104,7 +104,7 @@ public class Entity
     {
         get
         {
-            return Parent != 0 ? GameController.I.Entities[Parent].Active && active : active;
+            return Parent != 0 ? GameController.Entities[Parent].Active && active : active;
         }
         set
         {
@@ -172,7 +172,7 @@ public class Entity
 
     void Setup()
     {
-        GameController.I.Entities.Add(Id, this);
+        GameController.Entities.Add(Id, this);
 
         OnLoad();
     }
@@ -191,22 +191,36 @@ public class Entity
         OnLoad();
     }
 
-    public void Delete()
+    public void Delete(bool isInstant = false, bool DeleteChilds = false)
     {
-        OnDelete();
+        if(!isInstant) OnDelete();
 
-        if(GameController.I.Entities.ContainsKey(Id))
+        if(GameController.Entities.ContainsKey(Id))
         {
-            for (int i = 0; i < Childs.Count; i++)
+            this.SetParent(null);
+            
+            if(DeleteChilds)
             {
-                GameController.I.Entities[Childs[i]].SetParent(null);
+                for (int i = 0; i < Childs.Count; i++)
+                {
+                    GameController.Entities[Childs[i]].Delete(isInstant, true);
+                }
+
+
+            } else
+            {
+                for (int i = 0; i < Childs.Count; i++)
+                {
+                    GameController.Entities[Childs[i]].SetParent(null);
+                }
             }
+            
 
             for (int i = 0; i < Behaviours.Count; i++)
             {
                 Behaviours[i].RemoveBehaviour();
             }
-            GameController.I.Entities.Remove(Id);
+            GameController.Entities.Remove(Id);
         }
         else throw new InvalidDataException("Tried to delete a non-existing Entity");
     }
@@ -271,13 +285,13 @@ public class Entity
     }
 
     /// <summary>
-    /// Searches the smallest unocuppied Id in GameController.I.Entities
+    /// Searches the smallest unocuppied Id in GameController.Entities
     /// </summary>
     public static ulong GetLowestID()
     {
         ulong Lowest = 1;
 
-        List<ulong> List = [.. GameController.I.Entities.Keys.Order()];
+        List<ulong> List = [.. GameController.Entities.Keys.Order()];
         for (int i = 0; i < List.Count; i++)
         {
             if(Lowest == List[i]) Lowest ++;
@@ -301,7 +315,7 @@ public class Entity
             if(SearchRecursively)
             for (int i = 0; i < Childs.Count; i++)
             {
-                if(GameController.I.Entities[Childs[i]].IsMyChild(entity)) return true;
+                if(GameController.Entities[Childs[i]].IsMyChild(entity)) return true;
             }
 
             return false;
@@ -322,11 +336,36 @@ public class Entity
             if(SearchRecursively)
             for (int i = 0; i < Childs.Count; i++)
             {
-                if(GameController.I.Entities[Childs[i]].IsMyChild(entityId)) return true;
+                if(GameController.Entities[Childs[i]].IsMyChild(entityId)) return true;
             }
 
             return false;
         }
+    }
+
+
+    public Entity Duplicate()
+    {
+        Entity newEnt = new(Name);
+
+        newEnt.Parent = this.Parent;
+        newEnt.GlobalPosition = this.GlobalPosition;
+        newEnt.Active = this.active;
+
+        for (int i = 0; i < Behaviours.Count; i++)
+        {
+            Behaviours[i].CloneBehaviour(newEnt);
+        }
+
+        for(int i = 0; i < Childs.Count; i++)
+        {
+            var childEnt = GameController.Entities[Childs[i]].Duplicate();
+
+            childEnt.Parent = newEnt.Id;
+        }
+
+
+        return newEnt;
     }
 
     #endregion

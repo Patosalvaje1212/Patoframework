@@ -19,12 +19,12 @@ public class RendererBehaviour : Behaviour
 
     public override void OnAdd()
     {
-        GameController.I.Renderers.Add(this);
+        GameController.Renderers.Add(this);
     }
 
     public override void OnRemove()
     {
-        GameController.I.Renderers.Remove(this);
+        GameController.Renderers.Remove(this);
     }
 
     public override void UpdateEffect()
