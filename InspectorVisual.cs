@@ -255,7 +255,11 @@ public static class InspectorVisual
 
         return [.. Ordererd];
     }
+
+
     #region Draw Properties
+    
+    
     // Draw Individual Properties
     static void DrawPropertiesAndFields(Entity? entity, Behaviour? beh, PropertyInfo[] propertyInfos, FieldInfo[] fieldInfos, int BehaviourNumber)
     {
@@ -339,12 +343,30 @@ public static class InspectorVisual
                     property.SetValue(entity == null ? beh : entity, str);
                 }
 
-            } else
+            } else if(res is ulong newUl)
+            {
+                int newIntC = Convert.ToInt32(newUl);
+
+                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
+                {
+                    if(newIntC < 0 ) newIntC = 0;
+
+                    if(property.Name == "Parent" && entity != null)
+                        entity.SetParent(Convert.ToUInt64(newIntC));
+                    else
+                        property.SetValue(entity == null ? beh : entity, Convert.ToUInt64(newIntC));
+                }
+
+            }else
             {
                 ImGui.SameLine();
                 ImGui.Text(res?.ToString() ?? "Null"); 
             }
 
+        }else
+        {
+            ImGui.SameLine();
+            ImGui.Text(res?.ToString() ?? "Null"); 
         }
     }
     static void DrawField(FieldInfo property, Entity? entity, Behaviour? beh, int IdNumber, int BehaviourNumber)
@@ -405,12 +427,30 @@ public static class InspectorVisual
                     property.SetValue(entity == null ? beh : entity, newF);
                 }
 
+            } else if(res is ulong newUl)
+            {
+                int newIntC = Convert.ToInt32(newUl);
+
+                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
+                {
+                    if(newIntC < 0 ) newIntC = 0;
+
+                    if(property.Name == "Parent" && entity != null)
+                        entity.SetParent(Convert.ToUInt64(newIntC));
+                    else
+                        property.SetValue(entity == null ? beh : entity, Convert.ToUInt64(newIntC));
+                }
+
             } else
             {
                 ImGui.SameLine();
                 ImGui.Text(res?.ToString() ?? "Null"); 
             }
 
+        }else
+        {
+            ImGui.SameLine();
+            ImGui.Text(res?.ToString() ?? "Null"); 
         }
     }
 
@@ -422,20 +462,22 @@ public static class InspectorVisual
     {
         if(REntity.Childs.Count > 0) 
         {
-            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAllColumns))
+            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow))
             {   
                 if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
                 foreach(var ch in REntity.Childs)
                 {
+                    Console.WriteLine(GameController.Entities[ch].Name);
                     DrawRecursiveList(GameController.Entities[ch]);
                 }
 
                 ImGui.TreePop();
             }
             else if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+
         } else
         {
-            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.Leaf))
+            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf))
             {
                 if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
                 ImGui.TreePop();

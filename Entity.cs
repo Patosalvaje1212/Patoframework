@@ -19,7 +19,7 @@ public class Entity
     /// Every Id is unique to that Entity. Use GameController.entities[] to find an Entity by its Id
     /// </remarks>
 
-    [InspectorShowOrder(6)]
+    [InspectorShowOrder(6), InspectorNonEditable]
     public ulong Id { get; private set; }
 
     /// <summary>
@@ -28,7 +28,7 @@ public class Entity
     /// <remarks>
     /// is 0 if has no Parent
     /// </remarks>
-    public ulong Parent;
+    public ulong Parent { get; private set; }
 
 
     /// <summary>
@@ -253,18 +253,39 @@ public class Entity
     {
         if(newParent != null)
         {
-            if(!IsMyChild(newParent))
+            if(GameController.Entities.TryGetValue(newParent.Id, out Entity? value))
             {
-                newParent.Childs.Add(this.Id);
-                Parent = newParent.Id;
-            } else
-            throw new ArgumentException("Cannot set a child of an Entity as its Parent");
+                if(!IsMyChild(newParent) && newParent != this)
+                {
+                    newParent.Childs.Add(this.Id);
+                    Parent = newParent.Id;
+
+                } else
+                ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
+            } 
+            else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
             
         } else
         {
+            if(Parent != 0) 
+                GameController.Entities[Parent].Childs.Remove(Id);
+            
             Parent = 0;
         }
         
+    }
+
+    public void SetParent(ulong newParent)
+    {
+        if(GameController.Entities.TryGetValue(newParent, out Entity? value))
+            SetParent(value);
+        else if(Parent != 0) 
+        {
+            GameController.Entities[Parent].Childs.Remove(Id);
+            Parent = 0;
+        }
+        else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
+
     }
 
     /// <summary>

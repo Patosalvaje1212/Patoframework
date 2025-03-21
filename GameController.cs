@@ -36,7 +36,8 @@ public static class GameController
     [JsonIgnore]
     public static List<RendererBehaviour> Renderers = [];
 
-    // Dictionary binding every Entity to an Id
+    // Dictionary binding every Entity to an Idç
+    // TODO: make get entity method
     public static Dictionary<ulong, Entity> Entities = [];
 
 
