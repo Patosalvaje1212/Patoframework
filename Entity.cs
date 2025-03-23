@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
+
 namespace PatoframeWork;
 
 public class Entity : ISerializable
@@ -171,8 +172,23 @@ public class Entity : ISerializable
     {
         if(newParent != null)
         {
+<<<<<<< Updated upstream
             newParent.childs.Add(this.Id);
             Parent = newParent.Id;
+=======
+            if(GameController.Entities.ContainsKey(newParent.Id))
+            {
+                if(!IsMyChild(newParent) && newParent != this)
+                {
+                    newParent.Childs.Add(this.Id);
+                    Parent = newParent.Id;
+
+                } else
+                ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
+            } 
+            else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
+            
+>>>>>>> Stashed changes
         } else
         {
             Parent = 0;

@@ -25,10 +25,14 @@ public class CameraManager
 
     CameraManager()
     {
+<<<<<<< Updated upstream
         cam.Offset = Vector2.Zero;
+=======
+        cam.Target = Vector2.Zero;
+        cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
+>>>>>>> Stashed changes
         cam.Rotation = 0f;
         cam.Zoom = 1f;
-        cam.Target = Vector2.Zero;
     }
 
     public void UpdateCycle()
