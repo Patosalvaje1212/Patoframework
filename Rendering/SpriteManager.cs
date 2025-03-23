@@ -1,12 +1,15 @@
 
+
 using System.IO;
 using System.Text;
+
 using Raylib_cs;
 
 namespace PatoframeWork.Rendering;
 
 public static class SpriteManager
 {
+
     public static Dictionary<ulong, ImageData> LoadedImages = [];
 
     public static bool isDirty = false;
@@ -141,5 +144,11 @@ public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Re
 
 
         return Lowest;
+
+
+
+    public static void LoadTexture(Image im)
+    {
+        
     }
 }

@@ -1,4 +1,5 @@
 using PatoframeWork;
+using Raylib_cs;
 using System.Numerics;
 
 namespace PatoframeWork.Physics;
@@ -10,9 +11,9 @@ public class PhysicBehaviour : Behaviour
     public override void UpdateEffect()
     {
 
-        owner.GlobalPosition += Velocity;
+        Owner.GlobalPosition += Velocity;
 
-        if(GameController.I.CurrentFrame % GameController.PhysicFrameUpdate == 0)
+        if(GameController.CurrentFrame % GameController.PhysicFrameUpdate == 0)
         {
             PhysicsUpdate();
         }
@@ -25,7 +26,7 @@ public class PhysicBehaviour : Behaviour
 
     public override void OnAdd()
     {
-        owner.ReceiveUpdates = true;
+
     }
 
     public override void OnRemove()

@@ -8,6 +8,7 @@ using PatoframeWork.Rendering;
 using ImGuiNET;
 using Raylib_cs;
 using System.Diagnostics;
+using System.Collections;
 
 namespace PatoframeWork;
 
@@ -20,16 +21,18 @@ public static class InspectorVisual
 
     static Entity? DEBUG_Selected;
 
-    static string? SaveL = "";
-    static string? newSaveName = "SaveData 1";
+    static string? SaveLocation = "";
+    static string? SaveName = "SaveData 1";
     static bool OpenFileSelector = false;
     static bool SaveFileSelector = false;
 
 
     public static void ImGUIBeh()
     {
+        LoadPopus();
         ImGui.ShowDemoWindow();
 
+        // Draw Main Menu
         if(ImGui.BeginMainMenuBar())
         {
             if(ImGui.BeginMenu("File"))
@@ -42,9 +45,9 @@ public static class InspectorVisual
                     {
                         OpenFileSelector = true;
 
-                        SaveL = AppDomain.CurrentDomain.BaseDirectory;
+                        SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
 
-                        if(String.IsNullOrEmpty(SaveL))
+                        if(String.IsNullOrEmpty(SaveLocation))
                         {
                             throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                         }
@@ -53,24 +56,8 @@ public static class InspectorVisual
                 }
                 if(ImGui.BeginMenu("Open Recent"))
                 {
-
-
-                    if(ImGui.MenuItem("Recent/Test/2.png")) 
-                    {
-                        
-                    }
-                    if(ImGui.MenuItem("Recent/Test/3.png")) 
-                    {
-                        
-                    }
-                    if(ImGui.MenuItem("Recent/Test/4.png")) 
-                    {
-                        
-                    }
-                    if(ImGui.MenuItem("Recent/Test/5.png")) 
-                    {
-                        
-                    }
+                    
+                    // TODO
 
                     ImGui.EndMenu();
                 }
@@ -79,11 +66,11 @@ public static class InspectorVisual
 
                 if(ImGui.MenuItem("Save"))
                 {
-                    if(GameController.I.fileSaveName == "")
+                    if(GameController.fileSaveName == "")
                     {
-                        SaveL = AppDomain.CurrentDomain.BaseDirectory;
+                        SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
 
-                        if(String.IsNullOrEmpty(SaveL))
+                        if(String.IsNullOrEmpty(SaveLocation))
                         {
                             throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                         }
@@ -91,14 +78,14 @@ public static class InspectorVisual
                         SaveFileSelector = true;
 
                     } else
-                    GameController.I.SaveScene();
+                    GameController.SaveScene();
                 }
                 
-                if(ImGui.MenuItem("Save AS"))
+                if(ImGui.MenuItem("Save As"))
                 {
-                    SaveL = AppDomain.CurrentDomain.BaseDirectory;
+                    SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
 
-                    if(String.IsNullOrEmpty(SaveL))
+                    if(String.IsNullOrEmpty(SaveLocation))
                     {
                         throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                     }
@@ -145,12 +132,9 @@ public static class InspectorVisual
         
         }
 
-        #region OpenFile Popup
 
         if(OpenFileSelector) ImGui.OpenPopup("Open File");
 
-<<<<<<< Updated upstream
-=======
         if(SaveFileSelector) ImGui.OpenPopup("Save File");
 
         
@@ -710,8 +694,6 @@ public static class InspectorVisual
         }
 
 
-        // Open file popup
->>>>>>> Stashed changes
         Vector2 center = new(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
@@ -723,11 +705,14 @@ public static class InspectorVisual
 
                 if(ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
                 {
-                    SaveL = Directory.GetParent(SaveL).FullName;
+                    if(SaveLocation != null && Directory.GetParent(SaveLocation) is DirectoryInfo info)
+                    {
+                        if(info != null)  SaveLocation = info.FullName;
+                    }
                 }
 
                 ImGui.SameLine();
-                if(ImGui.InputText("Select Path", ref SaveL, 100))
+                if(ImGui.InputText("Select Path", ref SaveLocation, 100))
                 {
                     //
                 }
@@ -737,7 +722,17 @@ public static class InspectorVisual
             ImGui.SeparatorText("Files:");
 
             ImGui.BeginGroup();
-            DrawFileSelector();
+            
+            string? filePath = null;
+            string? fileName = null;
+            if(DrawFileSelector(".json", ref filePath, ref fileName)) 
+            {
+                GameController.SaveLocation = filePath;
+                GameController.fileSaveName = fileName;
+                OpenFileSelector = false;
+
+                GameController.LoadScene();
+            }
                 
             
 
@@ -746,11 +741,8 @@ public static class InspectorVisual
             ImGui.EndPopup();
         }
 
-        #endregion
-        #region SaveFile Popup
 
-        if(SaveFileSelector) ImGui.OpenPopup("Save File");
-
+        // Save file popup
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
                         
@@ -762,450 +754,45 @@ public static class InspectorVisual
 
                 if(ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
                 {
-                    SaveL = Directory.GetParent(SaveL).FullName;
+                    if(SaveLocation != null && Directory.GetParent(SaveLocation) is DirectoryInfo info)
+                    {
+                        if(info != null)  SaveLocation = info.FullName;
+                    }
                 }
 
                 ImGui.SameLine();
-                if(ImGui.InputText("Select Path", ref SaveL, 100))
+                if(ImGui.InputText("Select Path", ref SaveLocation, 100))
                 {
                     //
                 }
-
                 ImGui.Dummy(Vector2.One * 30);
-
-                if(ImGui.InputText("File Name", ref newSaveName, 40))
+                ImGui.SameLine();
+                if(ImGui.InputText("File Name", ref SaveName, 40))
                 {
                     
                 }
 
-                ImGui.Dummy(Vector2.One * 130);
+                ImGui.Dummy(Vector2.One * 30);
 
 
             ImGui.EndGroup();
 
             ImGui.SeparatorText("Files:");
 
-            ImGui.BeginGroup();
-            DrawFileSelector(false);
-
-           
-            
-
-            ImGui.EndGroup();
-
-            ImGui.Separator();
-
-            ImGui.BeginGroup();
-            if(ImGui.Button("Save Data"))
+            string? filePath = null;
+            string? fileName = null;
+            if(DrawFileSelector(null, ref filePath, ref fileName)) 
             {
-                
-                GameController.I.saveLocation = Path.GetDirectoryName(SaveL);
-                GameController.I.fileSaveName = newSaveName;
+                GameController.SaveLocation = filePath;
+                GameController.fileSaveName = fileName;
+                SaveFileSelector = false;
 
-                if(!String.IsNullOrEmpty(newSaveName))
-                {
-                    SaveFileSelector = false;
-
-                    GameController.I.SaveScene();
-                } else
-                {
-                    ImGui.OpenPopup("Cant be empty");
-                }
-
-                
+                GameController.SaveScene();
             }
-            ImGui.EndGroup();
 
             ImGui.EndPopup();
-
-
-            if(ImGui.BeginPopup("Cant be empty", ImGuiWindowFlags.ChildMenu))
-            {
-                ImGui.SetItemDefaultFocus();
-                ImGui.BeginGroup();
-                    if(ImGui.Button("OK"))
-                    {
-                        ImGui.CloseCurrentPopup();
-                    }
-                ImGui.EndGroup();
-
-                ImGui.EndPopup();
-            }
-        }
-
-
-        ImGui.Begin("Entities");
-
-            foreach (var entity in GameController.I.entities.Where((res) => res.Value.Parent == 0))
-            {   
-                DrawRecursiveList(entity.Value);
-            }
-        ImGui.End();
-
-        #endregion
-
-
-
-
-        ImGui.Begin("Entity Info");
-        if(DEBUG_Selected != null) DrawEntityInfo(DEBUG_Selected);
-        ImGui.End();
-
-
-       
-    }
-
-
-    static void DrawEntityInfo(Entity entity)
-    {
-        if(entity.Active) ImGui.Text(entity.name);
-        else ImGui.TextDisabled(entity.name);
-
-        PropertyInfo[] propertyInfos = typeof(Entity).GetProperties();
-        FieldInfo[] fieldInfos = typeof(Entity).GetFields();
-
-        foreach (var property in propertyInfos)
-        {
-            if(property.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
-
-
-            var res = property.GetValue(entity);
-
-            
-            if(property.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-            && res == null) continue;
-
-            bool defaultRender = false;
-            if(property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-            {
-                if(res is int intR)
-                {
-                    int refInt = intR;
-                    if(ImGui.InputInt(property.Name + " ", ref refInt))
-                    {
-                        property.SetValue(entity, refInt);
-                    }
-
-                } else  if(res is bool boolR)
-                {
-                    bool newB = boolR;
-                    if(ImGui.Checkbox(property.Name, ref newB))
-                    {
-                        property.SetValue(entity, newB);
-                    }
-
-                } else if(res is Vector2 v2)
-                {
-                    Vector2 refV = v2;
-                    if(ImGui.DragFloat2(property.Name + " X", ref refV, v2.Length() / 150))
-                    {
-                        property.SetValue(entity, refV);
-                    }
-
-                }else
-                {
-                    defaultRender = true;
-                }
-
-            } else
-            {
-                defaultRender = true;
-            }
-
-            if(defaultRender)
-            {
-                ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), property.Name + "  : ");
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null"); 
-            }
-
-            
-            
-        }
-
-        foreach (var field in fieldInfos)
-        {
-            if(field.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
-
-
-            var res = field.GetValue(entity);
-
-            
-            if(field.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-            && res == null) continue;
-
-            bool defaultRender = false;
-            if(field.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-            {
-                if(res is int intR)
-                {
-                    int refInt = intR;
-                    if(ImGui.InputInt(field.Name + "", ref refInt))
-                    {
-                        field.SetValue(entity, refInt);
-                    }
-
-                } else  if(res is bool boolR)
-                {
-                    bool newB = boolR;
-                    if(ImGui.Checkbox(field.Name, ref newB))
-                    {
-                        field.SetValue(entity, newB);
-                    }
-
-                } else if(res is Vector2 v2)
-                {
-                    Vector2 refV = v2;
-                    if(ImGui.DragFloat2(field.Name + " X", ref refV, v2.Length() / 150))
-                    {
-                        field.SetValue(entity, refV);
-                    }
-
-                }else
-                {
-                    defaultRender = true;
-                }
-
-            } else
-            {
-                defaultRender = true;
-            }
-
-            if(defaultRender)
-            {
-                ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), field.Name + "  : ");
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null"); 
-            }
-            
-        }
-        
-        ImGui.SeparatorText("Properties");
-
-        if(entity.Behaviours.Count > 0)
-        {
-            foreach (var beh in entity.Behaviours)
-            {
-                
-                ImGui.TextColored(new Vector4(Color.Gold.R, Color.Gold.G, Color.Gold.B, Color.Gold.A) / 255, beh.GetType().Name);
-                ImGui.BeginGroup();
-
-                PropertyInfo[] behPropertyInfos = beh.GetType().GetProperties();
-                FieldInfo[] behFieldInfos = beh.GetType().GetFields();
-
-                foreach (var property in behPropertyInfos)
-                {
-                    if(property.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
-
-
-                    var res = property.GetValue(beh);
-
-                    
-                    if(property.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-                    && res == null) continue;
-
-                    bool defaultRender = false;
-                    if(property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-                    {
-                        if(res is int intR)
-                        {
-                            int refInt = intR;
-                            if(ImGui.InputInt(property.Name + " ", ref refInt))
-                            {
-                                property.SetValue(beh, refInt);
-                            }
-
-                        } else if(res is bool boolR)
-                        {
-                            bool newB = boolR;
-                            if(ImGui.Checkbox(property.Name, ref newB))
-                            {
-                                property.SetValue(beh, newB);
-                            }
-
-                        } else if(res is Vector2 v2)
-                        {
-                            Vector2 refV = v2;
-                            if(ImGui.DragFloat2(property.Name + " X", ref refV, v2.Length() / 150))
-                            {
-                                property.SetValue(beh, refV);
-                            }
-
-                        }else if(res is Color colR)
-                        {
-                            Vector3 newCol = new Vector3(colR.R, colR.G, colR.B) / 255;
-                            if(ImGui.ColorEdit3(property.Name, ref newCol))
-                            {
-                                property.SetValue(beh, new Color(newCol.X, newCol.Y, newCol.Z));
-                            }
-
-                        } else
-                        {
-                            defaultRender = true;
-                        }
-
-                    } else
-                    {
-                        defaultRender = true;
-                    }
-
-                    if(defaultRender)
-                    {
-                        ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), property.Name + "  : ");
-                        ImGui.SameLine();
-                        ImGui.Text(res?.ToString() ?? "Null"); 
-                    }
-
-                    
-                    
-                }
-
-                foreach (var field in behFieldInfos)
-                {
-                    if(field.GetCustomAttributes(typeof(InspectorHideAttribute), false).Length > 0 ) continue;
-
-
-                    var res = field.GetValue(beh);
-
-                    
-                    if(field.GetCustomAttributes(typeof(InspectorHideNull), false).Length > 0 
-                    && res == null) continue;
-
-                    bool defaultRender = false;
-                    if(field.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0 )
-                    {
-                        if(res is int intR)
-                        {
-                            int refInt = intR;
-                            if(ImGui.InputInt(field.Name + " ", ref refInt))
-                            {
-                                field.SetValue(beh, refInt);
-                            }
-
-                        } else if(res is bool boolR)
-                        {
-                            bool newB = boolR;
-                            if(ImGui.Checkbox(field.Name, ref newB))
-                            {
-                                field.SetValue(beh, newB);
-                            }
-
-                        } else if(res is Vector2 v2)
-                        {
-                            Vector2 refV = v2;
-                            if(ImGui.DragFloat2(field.Name + " X", ref refV, v2.Length() / 150))
-                            {
-                                field.SetValue(beh, refV);
-                            }
-
-                        } else if(res is Color colR)
-                        {
-                            Vector3 newCol = new Vector3(colR.R, colR.G, colR.B) / 255;
-                            if(ImGui.ColorEdit3(field.Name, ref newCol))
-                            {
-                                field.SetValue(beh, new Color(newCol.X, newCol.Y, newCol.Z));
-                            }
-
-                        } else
-                        {
-                            defaultRender = true;
-                        }
-
-                    } else
-                    {
-                        defaultRender = true;
-                    }
-
-                    if(defaultRender)
-                    {
-                        ImGui.TextColored(new Vector4(.5f, .5f, 1f, 1f), field.Name + "  : ");
-                        ImGui.SameLine();
-                        ImGui.Text(res?.ToString() ?? "Null"); 
-                    }
-                    
-                }
-
-                ImGui.EndGroup();
-                ImGui.Separator();
-            }
-        
         }
     }
-
-    
-<<<<<<< Updated upstream
-    static void DrawRecursiveList(Entity REntity)
-    {
-        if(REntity.childs.Count > 0) 
-        {
-            if(ImGui.TreeNodeEx(REntity.name, (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAllColumns))
-            {   
-                if(ImGui.IsItemClicked()) DEBUG_Selected = REntity;
-
-                foreach(var ch in REntity.childs)
-                {
-                    DrawRecursiveList(GameController.I.entities[ch]);
-                }
-
-                ImGui.TreePop();
-            }
-            else if(ImGui.IsItemClicked()) DEBUG_Selected = REntity;
-
-        } else
-        {
-            if(ImGui.TreeNodeEx(REntity.name, (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.Leaf))
-            {
-                if(ImGui.IsItemClicked()) DEBUG_Selected = REntity;
-
-                ImGui.TreePop();
-            }
-        }
-
-        
-    }
-
-
-   
-
-    static void DrawFileSelector(bool limitToJson = true)
-    {
-        
-
-        var files = Directory.GetFileSystemEntries(SaveL).Where(res => (limitToJson && Path.GetExtension(res) == ".json") || Directory.Exists(res)).OrderBy(res => !Directory.Exists(res)).ToList();
-
-        if(files.Count > 0)
-        {
-            foreach (var file in files)
-            {
-                if(Directory.Exists(file)) ImGui.Dummy(Vector2.One * 25);
-                else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
-                ImGui.SameLine();
-
-                if(ImGui.Button(file))
-                {
-                   
-                    GameController.I.saveLocation = Path.GetDirectoryName(file);
-                    
-
-                    if(!Directory.Exists(file))
-                    {
-                        GameController.I.fileSaveName =  Path.GetFileName(file);
-                        OpenFileSelector = false;
-                        GameController.I.LoadScene();
-                    }
-                    
-                    SaveL = file;
-                    Console.WriteLine(GameController.I.saveLocation + " - " + GameController.I.fileSaveName);
-
-                }
-            }
-            
-        }
-    }
-    
-
-
-=======
 
 
     public static void DrawSelectedPos()
@@ -1213,8 +800,6 @@ public static class InspectorVisual
         if(DEBUG_Selected != null) 
         Raylib.DrawRing(DEBUG_Selected.GlobalPosition, 150, 145, 0, 360, 100, Color.Black);
     }
-
-
->>>>>>> Stashed changes
+        
 #endif
 }

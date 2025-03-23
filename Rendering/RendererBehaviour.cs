@@ -1,18 +1,12 @@
-using System.Text.Json.Serialization;
 using Raylib_cs;
 
 namespace PatoframeWork.Rendering;
-
-
-
 
 public class RendererBehaviour : Behaviour
 {
     public Color Color = Color.White;
     public float Size = 15;
 
-<<<<<<< Updated upstream
-=======
     public enum ShapeType
     {
         Circle, Square, Image
@@ -25,17 +19,17 @@ public class RendererBehaviour : Behaviour
 
     
     public float zRot;
->>>>>>> Stashed changes
+
     public int Order;
 
     public override void OnAdd()
     {
-        GameController.I.renderers.Add(this);
+        GameController.Renderers.Add(this);
     }
 
     public override void OnRemove()
     {
-        GameController.I.renderers.Remove(this);
+        GameController.Renderers.Remove(this);
     }
 
     public override void UpdateEffect()
