@@ -1,4 +1,4 @@
-using Raylib_cs;
+﻿using Raylib_cs;
 
 using System.Numerics;
 using PatoframeWork.Rendering;
@@ -35,8 +35,6 @@ public static class GameController
     // Every object that has to render
     [JsonIgnore]
     public static HashSet<RendererBehaviour> Renderers = [];
-
-    public static List<RendererBehaviour> Renderers = [];
 
     // Dictionary binding every Entity to an Idç
     // TODO: make get entity method
@@ -104,10 +102,6 @@ public static class GameController
             Update.Invoke();
 
 
-            CameraManager.I.UpdateCycle();
-	
-            var toRender = renderers.OrderBy((res) => res.Order).Where((res) => res.owner.Active).ToList();
-
 
             // Update Camera
             CameraManager.I.UpdateCamera();
@@ -121,6 +115,9 @@ public static class GameController
             if(IsKeyPressed(KeyboardKey.Minus)) Entities[1].Behaviours[0].CloneBehaviour();
             if(IsKeyPressed(KeyboardKey.M)) Entities[1].Duplicate();
             
+
+            var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
+
 
 
             BeginDrawing();
