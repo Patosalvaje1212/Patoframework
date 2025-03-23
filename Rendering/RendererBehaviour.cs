@@ -1,17 +1,21 @@
-using System.Text.Json.Serialization;
 using Raylib_cs;
 
 namespace PatoframeWork.Rendering;
-
-
-
 
 public class RendererBehaviour : Behaviour
 {
     public Color Color = Color.Blue;
     public int Size = 15;
 
-    public string texturePath = "";
+    public enum ShapeType
+    {
+        Circle, Square, Image
+    }
+
+    public ShapeType RenderType;
+
+    
+    public ulong ImageID;
 
     
     public float zRot;

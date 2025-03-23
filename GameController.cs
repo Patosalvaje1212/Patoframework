@@ -118,14 +118,20 @@ public static class GameController
             BeginMode2D(CameraManager.I.cam);
 
 
-            if(true)
-            {
-            }
-
-
             for (int i = 0; i < toRender.Count; i++)
             {
-                DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+                if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
+                {
+
+                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
+                {
+                    DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - toRender[i].Size/2, toRender[i].Size, toRender[i].Size, toRender[i].Color);
+
+                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
+                {
+                    DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+                } 
+
             }
             
 

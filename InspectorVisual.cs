@@ -144,6 +144,7 @@ public static class InspectorVisual
             if(ImGui.SmallButton("Create Entity"))
             {
                 var t = new Entity("New Entity");
+                DEBUG_Selected = t;
             }
             ImGui.PopStyleColor();
 
@@ -153,6 +154,7 @@ public static class InspectorVisual
             {   
                 DrawRecursiveList(entity.Value);
             }
+
         ImGui.End();
 
 
@@ -198,10 +200,19 @@ public static class InspectorVisual
             ImGui.SeparatorText("Properties");
 
             int behC = 0;
-            foreach (var beh in entity.Behaviours)
+            foreach (var beh in entity.Behaviours.ToList())
             {
+                //ImGui.TextColored(new Vector4(Color.Gold.R, Color.Gold.G, Color.Gold.B, Color.Gold.A) / 255, beh.GetType().Name);
+
+                ImGui.PushStyleColor(ImGuiCol.Text, Raylib.ColorNormalize(Color.Gold));
+                ImGui.Text(beh.GetType().Name);
+                ImGui.PopStyleColor();
+
+                ImGui.PushStyleColor(ImGuiCol.ChildBg, Raylib.ColorNormalize(Color.DarkGray));
                 
-                ImGui.TextColored(new Vector4(Color.Gold.R, Color.Gold.G, Color.Gold.B, Color.Gold.A) / 255, beh.GetType().Name);
+                ImGui.BeginChild("ContextMenuTXT###" +  behC, Vector2.UnitY * ImGui.GetWindowHeight() / 3 - Vector2.UnitX * 40, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
+                
+
                 ImGui.BeginGroup();
 
                 PropertyInfo[] behPropertyInfos = beh.GetType().GetProperties();
@@ -210,33 +221,29 @@ public static class InspectorVisual
                 DrawPropertiesAndFields(null, beh, behPropertyInfos, behFieldInfos, behC);
 
                 ImGui.EndGroup();
+                ImGui.EndChild();
+                
+                ImGui.PopStyleColor();
+
+                if(ImGui.BeginPopupContextItem("ContextMenu###" +  behC))
+                {
+                    if(ImGui.MenuItem("Duplicate")) 
+                    {
+                        beh.CloneBehaviour();
+                    }
+
+                    if(ImGui.MenuItem("Delete")) 
+                    {
+                        beh.RemoveBehaviour();
+                    }
+
+                    ImGui.EndMenu();
+                }
+
                 ImGui.Separator();
 
                 behC ++;
             }
-        }
-
-        if (ImGui.BeginPopupContextItem("ContextMenu###" + entity.Id)) {
-
-           
-            if(ImGui.MenuItem("Duplicate")) 
-            {
-                entity.Duplicate();
-            }
-
-            if(ImGui.MenuItem("Delete")) 
-            {
-                entity.Delete();
-            }
-
-            if(ImGui.MenuItem("Delete -- Chain")) 
-            {
-                entity.Delete(true, true);
-            }
-
-
-            ImGui.EndPopup();
-            
         }
     }
 
@@ -343,6 +350,22 @@ public static class InspectorVisual
                     property.SetValue(entity == null ? beh : entity, str);
                 }
 
+            } else if(res is Enum newEnm)
+            {
+
+                if(ImGui.BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
+                {
+                    foreach (var item in Enum.GetValues(newEnm.GetType()))
+                    {
+                        if(ImGui.Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
+                        {
+                            property.SetValue(entity == null ? beh : entity, item);
+                        }
+                    }
+
+                    ImGui.EndCombo();
+                }
+
             } else if(res is ulong newUl)
             {
                 int newIntC = Convert.ToInt32(newUl);
@@ -427,6 +450,22 @@ public static class InspectorVisual
                     property.SetValue(entity == null ? beh : entity, newF);
                 }
 
+            } else if(res is Enum newEnm)
+            {
+
+                if(ImGui.BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
+                {
+                    foreach (var item in Enum.GetValues(newEnm.GetType()))
+                    {
+                        if(ImGui.Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
+                        {
+                            property.SetValue(entity == null ? beh : entity, item);
+                        }
+                    }
+
+                    ImGui.EndCombo();
+                }
+
             } else if(res is ulong newUl)
             {
                 int newIntC = Convert.ToInt32(newUl);
@@ -462,51 +501,95 @@ public static class InspectorVisual
     {
         if(REntity.Childs.Count > 0) 
         {
-            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow))
+            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth))
             {   
                 if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+
+                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                {
+                    if(ImGui.MenuItem("Duplicate")) 
+                    {
+                        REntity.Duplicate();
+                    }
+
+                    if(ImGui.MenuItem("Delete")) 
+                    {
+                        REntity.Delete();
+                    }
+
+                    if(ImGui.MenuItem("Delete -- Chain")) 
+                    {
+                        REntity.Delete(true, true);
+                    }
+
+
+                    ImGui.EndPopup();
+                }
+
                 foreach(var ch in REntity.Childs)
                 {
-                    Console.WriteLine(GameController.Entities[ch].Name);
                     DrawRecursiveList(GameController.Entities[ch]);
                 }
 
                 ImGui.TreePop();
             }
-            else if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+            else 
+            {
+                if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+            
+                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                {
+                    if(ImGui.MenuItem("Duplicate")) 
+                    {
+                        REntity.Duplicate();
+                    }
+
+                    if(ImGui.MenuItem("Delete")) 
+                    {
+                        REntity.Delete();
+                    }
+
+                    if(ImGui.MenuItem("Delete -- Chain")) 
+                    {
+                        REntity.Delete(true, true);
+                    }
+
+
+                    ImGui.EndPopup();
+                }
+            }
 
         } else
         {
-            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf))
+            if(ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.SpanFullWidth))
             {
                 if(ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+                
+                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                {
+                    if(ImGui.MenuItem("Duplicate")) 
+                    {
+                        REntity.Duplicate();
+                    }
+
+                    if(ImGui.MenuItem("Delete")) 
+                    {
+                        REntity.Delete();
+                    }
+
+                    if(ImGui.MenuItem("Delete -- Chain")) 
+                    {
+                        REntity.Delete(true, true);
+                    }
+
+
+                    ImGui.EndPopup();
+                }
+                        
+                
                 ImGui.TreePop();
             }
         }
-
-        if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id)) {
-
-           
-            if(ImGui.MenuItem("Duplicate")) 
-            {
-                REntity.Duplicate();
-            }
-
-            if(ImGui.MenuItem("Delete")) 
-            {
-                REntity.Delete();
-            }
-
-            if(ImGui.MenuItem("Delete -- Chain")) 
-            {
-                REntity.Delete(true, true);
-            }
-
-
-            ImGui.EndPopup();
-            
-        }
-        
     }
 
 

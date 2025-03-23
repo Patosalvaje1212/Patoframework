@@ -26,7 +26,7 @@ public class CameraManager
         cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
         cam.Rotation = 0f;
         cam.Zoom = 1f;
-        cam.Target = new Vector2(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
+        cam.Target = Vector2.Zero;
     }
 
     public void UpdateCamera()
