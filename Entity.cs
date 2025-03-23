@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
+
 namespace PatoframeWork;
 
 public class Entity
@@ -253,17 +254,13 @@ public class Entity
     {
         if(newParent != null)
         {
-            if(GameController.Entities.TryGetValue(newParent.Id, out Entity? value))
+            if(!IsMyChild(newParent) && newParent != this)
             {
-                if(!IsMyChild(newParent) && newParent != this)
-                {
-                    newParent.Childs.Add(this.Id);
-                    Parent = newParent.Id;
+                newParent.Childs.Add(this.Id);
+                Parent = newParent.Id;
 
-                } else
-                ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
-            } 
-            else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
+            } else
+            ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
             
         } else
         {

@@ -4,8 +4,8 @@ namespace PatoframeWork.Rendering;
 
 public class RendererBehaviour : Behaviour
 {
-    public Color Color = Color.Blue;
-    public int Size = 15;
+    public Color Color = Color.White;
+    public float Size = 15;
 
     public enum ShapeType
     {
@@ -15,10 +15,11 @@ public class RendererBehaviour : Behaviour
     public ShapeType RenderType;
 
     
-    public ulong ImageID;
+    public ulong ImageID, SpriteID;
 
     
     public float zRot;
+
     public int Order;
 
     public override void OnAdd()

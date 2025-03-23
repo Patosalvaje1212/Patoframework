@@ -210,13 +210,15 @@ public static class InspectorVisual
 
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, Raylib.ColorNormalize(Color.DarkGray));
                 
-                ImGui.BeginChild("ContextMenuTXT###" +  behC, Vector2.UnitY * ImGui.GetWindowHeight() / 3 - Vector2.UnitX * 40, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
                 
 
-                ImGui.BeginGroup();
 
                 PropertyInfo[] behPropertyInfos = beh.GetType().GetProperties();
                 FieldInfo[] behFieldInfos = beh.GetType().GetFields();
+
+                
+                ImGui.BeginChild("ContextMenuTXT###" +  behC, Vector2.UnitY * (55 * (behPropertyInfos.Length + behPropertyInfos.Length)) - Vector2.UnitX * 40, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
+                ImGui.BeginGroup();
 
                 DrawPropertiesAndFields(null, beh, behPropertyInfos, behFieldInfos, behC);
 
@@ -600,7 +602,7 @@ public static class InspectorVisual
         ImGui.BeginGroup();
         if(SaveLocation != null)
         {
-            List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).Where(res => (fileType != null && Path.GetExtension(res) == fileType) || Directory.Exists(res)).OrderBy(res => !Directory.Exists(res))];
+            List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).OrderBy(res => !Directory.Exists(res))];
 
             if(files.Count > 0)
             {
@@ -612,10 +614,11 @@ public static class InspectorVisual
                     else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
                     ImGui.SameLine();
 
-                    if(isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
-                    else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
+                    if(isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
+                    else if(fileType != null && Path.GetExtension(file) == fileType || (fileType == null && isDirectory)) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
+                    else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
 
-                    if(ImGui.Button(Path.GetFileName(file)))
+                    if( ImGui.Button(Path.GetFileName(file)) )
                     {
                     
                         DestPath = Path.GetDirectoryName(file) + "/";
@@ -634,6 +637,9 @@ public static class InspectorVisual
                         SaveLocation = file;
                     }
                     ImGui.PopStyleColor();
+                
+
+                    
                 }
                 
             }
@@ -688,7 +694,6 @@ public static class InspectorVisual
         }
 
 
-        // Open file popup
         Vector2 center = new(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
@@ -789,6 +794,12 @@ public static class InspectorVisual
         }
     }
 
-    
+
+    public static void DrawSelectedPos()
+    {
+        if(DEBUG_Selected != null) 
+        Raylib.DrawRing(DEBUG_Selected.GlobalPosition, 150, 145, 0, 360, 100, Color.Black);
+    }
+        
 #endif
 }

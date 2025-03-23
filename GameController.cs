@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+using Raylib_cs;
 
 using System.Numerics;
 using PatoframeWork.Rendering;
@@ -34,11 +34,14 @@ public static class GameController
 
     // Every object that has to render
     [JsonIgnore]
+    public static HashSet<RendererBehaviour> Renderers = [];
+
     public static List<RendererBehaviour> Renderers = [];
 
     // Dictionary binding every Entity to an Idç
     // TODO: make get entity method
     public static Dictionary<ulong, Entity> Entities = [];
+
 
 
     // Is called once per frame. Used to call Entity.SelfUpdate()
@@ -75,9 +78,8 @@ public static class GameController
 
         // ----
 
-        
+        SpriteManager.LoadTextureFolder("./Resources/Images");
 
-       
 
         // Only edit mode Setups
         #if DEBUG
@@ -95,20 +97,31 @@ public static class GameController
 
         while (!WindowShouldClose())
         {
+    
+
             CurrentFrame ++;
 
             Update.Invoke();
+
+
+            CameraManager.I.UpdateCycle();
+	
+            var toRender = renderers.OrderBy((res) => res.Order).Where((res) => res.owner.Active).ToList();
+
+
             // Update Camera
             CameraManager.I.UpdateCamera();
-	
-            // Filter renderers && order them by draw Order
-            var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
 
+            if(SpriteManager.isDirty)
+            {
+                SpriteManager.LoadAllTextures();
+            }
 
             if(IsKeyPressed(KeyboardKey.Minus)) Entities[1].Behaviours[0].CloneBehaviour();
             if(IsKeyPressed(KeyboardKey.M)) Entities[1].Duplicate();
             
+
 
             BeginDrawing();
 
@@ -120,28 +133,42 @@ public static class GameController
 
             for (int i = 0; i < toRender.Count; i++)
             {
+
                 if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
-                {
+                {            
+                    if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
+                    {
+                        image.loadedTexture ??= LoadTextureFromImage(image.image);
+
+                        if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
+                        {
+                            DrawTexturePro(loadedTexture, sprite, new Rectangle(Vector2.Zero, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), -toRender[i].Owner.GlobalPosition + Vector2.One * (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size) / 2, toRender[i].zRot, toRender[i].Color);
+                        }
+                        else
+                        ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
+                        
+                    } else
+                    ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
 
                 } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
                 {
-                    DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - toRender[i].Size/2, toRender[i].Size, toRender[i].Size, toRender[i].Color);
+                    DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
 
                 } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
                 {
                     DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
-                } 
-
+                }
             }
             
 
             
             // Draw all the Debug Windows
             #if DEBUG
-    
+                
+                InspectorVisual.DrawSelectedPos();
     
                 EndMode2D();
-
+          
 
                 RlImGui.Begin();
 
@@ -153,6 +180,7 @@ public static class GameController
             
             EndDrawing();
             
+            
         }
 
         #if DEBUG
@@ -160,6 +188,8 @@ public static class GameController
             RlImGui.Shutdown();
 
         #endif
+
+        SpriteManager.UnloadAllImages();
 
         CloseWindow();
     }
