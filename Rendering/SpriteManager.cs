@@ -10,13 +10,13 @@ namespace PatoframeWork.Rendering;
 public static class SpriteManager
 {
 
-    public static Dictionary<ulong, ImageData> LoadedImages = [];
+    public static Dictionary<ulong, ImageData> LoadedImages { get; private set; }= [];
 
-    public static bool isDirty = false;
+    public static bool IsDirty { get; set; }= false;
 
     public static void LoadTextureFolder(string folderPath)
     {
-        isDirty = true;
+        IsDirty = true;
 
         var Files = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath));
         
@@ -72,7 +72,7 @@ public static class SpriteManager
 
                     var newT = new ImageData(Texture, tSizeX, tSizeY, RectList);
         
-                    LoadedImages.Add(ImageData.GetLowestID(LoadedImages.Keys.ToList()), newT);
+                    LoadedImages.Add(ImageData.GetLowestID([.. LoadedImages.Keys]), newT);
 
                     //Console.WriteLine($"{LoadedImages[0]} images loaded");
 
@@ -88,7 +88,7 @@ public static class SpriteManager
 
     public static void LoadAllTextures()
     {
-        isDirty = false;
+        IsDirty = false;
 
 
         foreach (var image in LoadedImages.Values)
@@ -133,7 +133,7 @@ public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Re
     {
         ulong Lowest = 0;
 
-        List<ulong> List = list.Order().ToList();
+        List<ulong> List = [.. list.Order()];
 
         for (int i = 0; i < List.Count; i++)
         {

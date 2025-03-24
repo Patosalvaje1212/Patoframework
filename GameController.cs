@@ -2,21 +2,18 @@
 
 using System.Numerics;
 using PatoframeWork.Rendering;
-using PatoframeWork;
 
 
 using static Raylib_cs.Raylib;
-using PatoframeWork.Physics;
 using rlImGui_cs;
 using ImGuiNET;
 using Newtonsoft.Json;
+using PatoframeWork.Physics;
 
 
 namespace PatoframeWork;
 public static class GameController
 {
-    // Amount of frames for each PhysicUpdate
-    public const int PhysicFrameUpdate = 20;
 
     // Save Location and Filename -- They get initialized after selecting a path
     public static string? SaveLocation = "./";
@@ -34,11 +31,11 @@ public static class GameController
 
     // Every object that has to render
     [JsonIgnore]
-    public static HashSet<RendererBehaviour> Renderers = [];
+    private readonly static HashSet<RendererBehaviour> Renderers = [];
 
     // Dictionary binding every Entity to an Idç
     // TODO: make get entity method
-    public static Dictionary<ulong, Entity> Entities = [];
+    private static Dictionary<ulong, Entity> Entities = [];
 
 
 
@@ -107,14 +104,10 @@ public static class GameController
             CameraManager.I.UpdateCamera();
 
 
-            if(SpriteManager.isDirty)
+            if(SpriteManager.IsDirty)
             {
                 SpriteManager.LoadAllTextures();
             }
-
-            if(IsKeyPressed(KeyboardKey.Minus)) Entities[1].Behaviours[0].CloneBehaviour();
-            if(IsKeyPressed(KeyboardKey.M)) Entities[1].Duplicate();
-            
 
             var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
@@ -131,7 +124,7 @@ public static class GameController
             for (int i = 0; i < toRender.Count; i++)
             {
 
-                if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
+                if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Image)
                 {            
                     if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
                     {
@@ -147,11 +140,11 @@ public static class GameController
                     } else
                     ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
 
-                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
+                } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Square)
                 {
                     DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
 
-                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
+                } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Circle)
                 {
                     DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
                 }
@@ -191,9 +184,12 @@ public static class GameController
         CloseWindow();
     }
 
-    static void UpdateGame() {}
+    static void UpdateGame()
+    {
+        PhysicsManager.CallPhysicUpdate();
+    }
 
-
+    #region Scene Data
     // Used by the Serializer to Open Data files, and load its content
     public static void LoadScene()
     {
@@ -214,7 +210,7 @@ public static class GameController
         throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
     }
 
-
+    
     // Used by the Serializer to Save all data to files
     public static void SaveScene()
     {   
@@ -222,4 +218,61 @@ public static class GameController
 
         File.WriteAllText(SaveLocation + fileSaveName, jsonStringGen);
     }
+
+    #endregion
+    
+    #region Entity List Helpers
+
+    public static Entity? TryFindEntity(ulong ID)
+    {
+        return Entities.TryGetValue(ID, out Entity? value) ? value : null;
+    }
+
+    public static Entity FindEntity(ulong ID)
+    {
+        return Entities[ID];
+    }
+
+    public static void AddEntity(Entity entity)
+    {
+        Entities.Add(entity.Id, entity);
+    }
+
+    public static void RemoveEntity(ulong ID)
+    {
+        Entities.Remove(ID);
+    }
+
+    public static ulong GetLowestFreeID()
+    {
+        ulong Lowest = 1;
+
+        List<ulong> List = [.. GameController.Entities.Keys.Order()];
+        for (int i = 0; i < List.Count; i++)
+        {
+            if(Lowest == List[i]) Lowest ++;
+        }
+
+        return Lowest;
+    }
+
+    public static List<Entity> GetAllEntities()
+    {
+        return [.. Entities.Values];
+    }
+
+    #endregion
+
+    #region Renderer List Helpers
+    public static void AddRenderer(RendererBehaviour rendBeh)
+    {
+        Renderers.Add(rendBeh);
+    }
+
+    public static void RemoveRenderer(RendererBehaviour rendBeh)
+    {
+        Renderers.Remove(rendBeh);
+    }
+
+    #endregion
 }

@@ -150,9 +150,9 @@ public static class InspectorVisual
 
             ImGui.SeparatorText("Entities -- ");
 
-            foreach (var entity in GameController.Entities.ToList().Where((res) => res.Value.Parent == 0))
+            foreach (var entity in GameController.GetAllEntities().Where((res) => res.Parent == 0))
             {   
-                DrawRecursiveList(entity.Value);
+                DrawRecursiveList(entity);
             }
 
         ImGui.End();
@@ -530,7 +530,7 @@ public static class InspectorVisual
 
                 foreach(var ch in REntity.Childs)
                 {
-                    DrawRecursiveList(GameController.Entities[ch]);
+                    DrawRecursiveList(GameController.FindEntity(ch));
                 }
 
                 ImGui.TreePop();
@@ -623,7 +623,6 @@ public static class InspectorVisual
                     
                         DestPath = Path.GetDirectoryName(file) + "/";
                         
-
                         if(!isDirectory)
                         {
                             FileName = Path.GetFileName(file);
@@ -638,12 +637,10 @@ public static class InspectorVisual
                     }
                     ImGui.PopStyleColor();
                 
-
-                    
                 }
-                
             }
-        } else
+        }
+        else
         throw new FileLoadException("Error while loading the Folder data. Please check the Engine has access to the requested folder");
 
         ImGui.EndGroup();

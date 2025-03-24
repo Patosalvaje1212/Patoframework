@@ -120,6 +120,8 @@ public static class BehaviourHelper
         if(target == null) newB = behaviour.Owner.AddBehaviour(behaviour.GetType());
         else newB = target.AddBehaviour(behaviour.GetType());
 
+        newB.OnAdd();
+
         foreach (var property in behaviour.GetType().GetProperties())
         {
             property.SetValue(newB, property.GetValue(behaviour));
