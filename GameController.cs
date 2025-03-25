@@ -10,6 +10,7 @@ using PatoframeWork.Physics;
 using rlImGui_cs;
 using ImGuiNET;
 using Newtonsoft.Json;
+using System.Data.Common;
 
 
 namespace PatoframeWork;
@@ -51,6 +52,16 @@ public static class GameController
     // Frame Counter 
     public static int CurrentFrame { get; private set; } = 0;
 
+
+
+    // Rend--
+    
+    struct Light()
+    {
+        public int enabled = 1;
+        public Vector2 position = Vector2.Zero;
+    }
+
     public static void MainThread()
     {
         
@@ -76,7 +87,14 @@ public static class GameController
 
         // ----
 
-        SpriteManager.LoadTextureFolder("./Resources/Images");
+        SpriteManager.LoadTextureFolder("Resources/Images");
+
+
+        var newO = new Entity("ABc");
+        newO.AddBehaviour<RendererBehaviour>().SetColor(Color.Blue).SetSize(40);
+
+
+    
 
 
         // Only edit mode Setups
@@ -91,15 +109,46 @@ public static class GameController
 
 
         #endif
+
         
+        
+        // Shader Setup:
+        Shader DefaultShader = LoadShader(null, "Rendering/DefaultNormal.fs");
+
+        int normalMapLoc = GetShaderLocation(DefaultShader, "texture1");
+
+        
+
+        
+        
+        int lLoc = GetShaderLocation(DefaultShader, "LightPos");
+        int rLoc = GetShaderLocation(DefaultShader, "Resolution");
+        int lrLoc = GetShaderLocation(DefaultShader, "lightResolution");
+
+        int camOffLoc = GetShaderLocation(DefaultShader, "cameraOffset");
+        int camZoomLoc = GetShaderLocation(DefaultShader, "cameraZoom");
+
+
+
+
+        RenderTexture2D texture2D = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
 
         while (!WindowShouldClose())
         {
     
-
+            texture2D.Texture.Width = GetScreenWidth();
+            texture2D.Texture.Height = GetScreenHeight();
             CurrentFrame ++;
 
             Update.Invoke();
+
+            //mult[0] = ((CurrentFrame % 10) + 1)  / 11f;
+            //mult[1] = ((CurrentFrame % 50) + 1)  / 51f;
+            //mult[2] = ((CurrentFrame % 100) + 1) / 101f;
+
+
+
+
 
 
 
@@ -107,65 +156,104 @@ public static class GameController
             CameraManager.I.UpdateCamera();
 
 
-            if(SpriteManager.isDirty)
+            if(SpriteManager.IsDirty)
             {
                 SpriteManager.LoadAllTextures();
             }
 
-            if(IsKeyPressed(KeyboardKey.Minus)) Entities[1].Behaviours[0].CloneBehaviour();
-            if(IsKeyPressed(KeyboardKey.M)) Entities[1].Duplicate();
+            var screen = new Vector2(0, 0);
+            var screen2 = new Vector2(-500, -500);
+            var screen3 = new Vector2(200, 200);
+            var screen4 = new Vector2(-500, -1600);
             
+            Vector3[] lPosList = [WorldToScreenSpace(screen), WorldToScreenSpace(screen2), WorldToScreenSpace(screen3), WorldToScreenSpace(screen4)];
+
 
             var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
+           
+
+            //SetShaderValue(DefaultShader, lrLoc, 15, ShaderUniformDataType.Int);
+
+            
+
+            SetShaderValueV(DefaultShader, lLoc, lPosList, ShaderUniformDataType.Vec3, 5);
+            SetShaderValue(DefaultShader, rLoc, new float[2] { GetScreenWidth(), GetScreenHeight()}, ShaderUniformDataType.Vec2);
+            SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.cam.Target, ShaderUniformDataType.Vec2);
+            SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.cam.Zoom, ShaderUniformDataType.Float);
 
 
             BeginDrawing();
 
             ClearBackground(Color.Beige);
             
-
             BeginMode2D(CameraManager.I.cam);
+            BeginShaderMode(DefaultShader);
+        
 
+                for (int i = 0; i < toRender.Count; i++)
+                {
 
-            for (int i = 0; i < toRender.Count; i++)
-            {
-
-                if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
-                {            
-                    if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
-                    {
-                        image.loadedTexture ??= LoadTextureFromImage(image.image);
-
-                        if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
+                    if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
+                    {            
+                        if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
                         {
-                            DrawTexturePro(loadedTexture, sprite, new Rectangle(Vector2.Zero, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), -toRender[i].Owner.GlobalPosition + Vector2.One * (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size) / 2, toRender[i].zRot, toRender[i].Color);
-                        }
-                        else
-                        ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
-                        
-                    } else
-                    ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
+                            image.loadedTexture ??= LoadTextureFromImage(image.image);
+                            
 
-                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
-                {
-                    DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
+                            if(image.loadedNormal == null)
+                            {
+                                if(image.imageNormal != null) image.loadedNormal = LoadTextureFromImage((Image)image.imageNormal);
+                                else image.loadedNormal = SpriteManager.DefaultText;
+                            }
 
-                } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
-                {
-                    DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+
+                            SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)image.loadedNormal);
+
+                            if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
+                            {
+                                DrawTexturePro(loadedTexture, sprite, new Rectangle(Vector2.Zero, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), -toRender[i].Owner.GlobalPosition + Vector2.One * (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size) / 2, toRender[i].zRot, toRender[i].Color);
+                            }
+                            else
+                            ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
+                            
+                        } else
+                        ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
+
+                    } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
+                    {
+                        SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
+
+                        DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
+
+                    } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
+                    {
+                        SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
+                     
+                        DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+                    }
                 }
-            }
+                
+            EndShaderMode();
+            EndMode2D();
             
-
             
             // Draw all the Debug Windows
-            #if DEBUG
-                
-                InspectorVisual.DrawSelectedPos();
+            //InspectorVisual.DrawSelectedPos();
     
-                EndMode2D();
-          
+            /*
+            
+            BeginDrawing();
+
+            ClearBackground(Color.White);
+
+
+
+            DrawTexture(texture2D.Texture, 0, 0, Color.White);
+            
+                        */
+            
+            #if DEBUG    
 
                 RlImGui.Begin();
 
@@ -174,7 +262,7 @@ public static class GameController
                 RlImGui.End();
             
             #endif
-            
+
             EndDrawing();
             
             
@@ -191,7 +279,25 @@ public static class GameController
         CloseWindow();
     }
 
-    static void UpdateGame() {}
+    static void UpdateGame()
+    {
+        //PhysicsManager.CallPhysicUpdate();
+    }
+
+
+    static Vector3 WorldToScreenSpace(Vector3 position)
+    {
+        var screen = GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.cam) - new Vector2(0f, GetScreenHeight());
+        
+        return new Vector3(screen.X/ GetScreenWidth(), -screen.Y/ GetScreenHeight(), position.Z);
+    }
+
+    static Vector3 WorldToScreenSpace(Vector2 position)
+    {
+        var screen = GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.cam) - new Vector2(0f, GetScreenHeight());
+        
+        return new Vector3(screen.X/ GetScreenWidth(), -screen.Y/ GetScreenHeight(), 0.05f);
+    }
 
 
     // Used by the Serializer to Open Data files, and load its content

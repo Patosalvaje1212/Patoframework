@@ -10,13 +10,20 @@ namespace PatoframeWork.Rendering;
 public static class SpriteManager
 {
 
-    public static Dictionary<ulong, ImageData> LoadedImages = [];
+    public static Dictionary<ulong, ImageData> LoadedImages { get; private set; } = [];
 
-    public static bool isDirty = false;
+    public static bool IsDirty{ get; private set; } = false;
 
-    public static void LoadTextureFolder(string folderPath)
+    public static Image DefaultImg { get; set; } = Raylib.GenImageColor(1, 1, new Color(128, 128, 255));
+
+    public static Texture2D? DefaultText { get; private set; }
+
+    public static void LoadTextureFolder(string folderPath, bool cleanUp = true)
     {
-        isDirty = true;
+        if(cleanUp && LoadedImages.Count > 0) UnloadAllImages();
+
+        IsDirty = true;
+
 
         var Files = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath));
         
@@ -30,17 +37,36 @@ public static class SpriteManager
                 
                 foreach (var line in textLine)
                 {
-                    string[] contents = line.Split(" ", 3);
+                    string[] contents = line.Split(" ", 4);
 
                     string imagePath = contents[0];
+                    
+                    Console.WriteLine(imagePath);
 
                     var Texture = Raylib.LoadImage(imagePath);
+
+                    string normalPath = contents[1];
                     
-                    string[] tSize = contents[1].Split(".", 2);
+                    Console.WriteLine(normalPath);
+
+
+                    Image Normal;
+
+                    bool hasNormal = !String.IsNullOrWhiteSpace(normalPath) && normalPath != "null";
+                    
+                    if(hasNormal)
+                        Normal = Raylib.LoadImage(normalPath);
+                    else
+                        Normal = DefaultImg;
+
+                    string[] tSize = contents[2].Split(".", 2);
                     int tSizeX = Int32.Parse(tSize[0]);
                     int tSizeY = Int32.Parse(tSize[1]);
 
-                    string[] sSize = contents[2].Split(".", 2);
+                    Console.WriteLine(tSize);
+
+
+                    string[] sSize = contents[3].Split(".", 2);
                     int sSizeX = Int32.Parse(sSize[0]);
                     int sSizeY = Int32.Parse(sSize[1]);
 
@@ -61,7 +87,6 @@ public static class SpriteManager
                             v ++;
                         }
 
-
                         count ++;
                     }
                     
@@ -72,7 +97,17 @@ public static class SpriteManager
 
                     var newT = new ImageData(Texture, tSizeX, tSizeY, RectList);
         
-                    LoadedImages.Add(ImageData.GetLowestID(LoadedImages.Keys.ToList()), newT);
+                    LoadedImages.Add(ImageData.GetLowestID([.. LoadedImages.Keys]), newT);
+
+                    if(hasNormal)
+                    {
+                        newT.imageNormal = Normal;
+                    } else
+                    {
+                        newT.imageNormal = null;
+                    }
+
+                    newT.hasNormal = hasNormal;
 
                     //Console.WriteLine($"{LoadedImages[0]} images loaded");
 
@@ -88,13 +123,21 @@ public static class SpriteManager
 
     public static void LoadAllTextures()
     {
-        isDirty = false;
+        IsDirty = false;
+
+        DefaultText ??= Raylib.LoadTextureFromImage(DefaultImg);
 
 
         foreach (var image in LoadedImages.Values)
         {
             if(image.loadedTexture != null)
             Raylib.LoadTextureFromImage(image.image);
+
+            if(image.loadedNormal != null && image.imageNormal is Image normalToLoad)
+            {
+                if(image.hasNormal) image.loadedNormal = Raylib.LoadTextureFromImage(normalToLoad);
+                else image.loadedNormal = DefaultText;
+            }
         }
     }
 
@@ -103,8 +146,11 @@ public static class SpriteManager
     {
         Raylib.UnloadImage(LoadedImages[key].image);
 
-        if(LoadedImages[key].loadedTexture is Texture2D loadedText)
-        Raylib.UnloadTexture(loadedText);
+        if(LoadedImages[key].loadedTexture is Texture2D loadedTexture)
+        Raylib.UnloadTexture(loadedTexture);
+
+        if(LoadedImages[key].imageNormal != null && LoadedImages[key].loadedNormal is Texture2D loadedNormal)
+        Raylib.UnloadTexture(loadedNormal);
 
         LoadedImages.Remove(key);
     }
@@ -126,6 +172,12 @@ public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Re
 
     public Texture2D? loadedTexture = null;
 
+    public Image? imageNormal = null;
+
+    public Texture2D? loadedNormal = null;
+
+    public bool hasNormal = true;
+
     public int TextSizeX = SizeX, TextSizeY = SizeY;
     public Dictionary<ulong, Rectangle> SpriteRects = SpriteRectangles; 
 
@@ -133,7 +185,7 @@ public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Re
     {
         ulong Lowest = 0;
 
-        List<ulong> List = list.Order().ToList();
+        List<ulong> List = [.. list.Order()];
 
         for (int i = 0; i < List.Count; i++)
         {

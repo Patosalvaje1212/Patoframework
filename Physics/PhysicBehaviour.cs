@@ -12,11 +12,6 @@ public class PhysicBehaviour : Behaviour
     {
 
         Owner.GlobalPosition += Velocity;
-
-        if(GameController.CurrentFrame % GameController.PhysicFrameUpdate == 0)
-        {
-            PhysicsUpdate();
-        }
     }
 
     public virtual void PhysicsUpdate()
