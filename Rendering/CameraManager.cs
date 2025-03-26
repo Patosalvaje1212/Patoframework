@@ -10,7 +10,11 @@ public class CameraManager
     public float Velocity = 12f;
     public bool freeRoam;
 
-    static CameraManager? instance;    
+    static CameraManager? instance;  
+    
+    public Vector2 lastPos;
+    public Vector2 lastRotZoom;
+
     public static CameraManager I
     {
         get
@@ -23,15 +27,15 @@ public class CameraManager
 
     CameraManager()
     {
-        cam.Target = Vector2.Zero;
-        cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
-
-        cam.Rotation = 0f;
-        cam.Zoom = 1f;
+        ResetCamera();
     }
 
     public void UpdateCamera()
     {
+        lastPos = cam.Target;
+        lastRotZoom = new Vector2(cam.Rotation, cam.Zoom);
+
+
         if(freeRoam)
         {
             if(Raylib.IsKeyDown(KeyboardKey.D))
@@ -79,7 +83,7 @@ public class CameraManager
     public void ResetCamera()
     {
         cam.Target = Vector2.Zero;
-        cam.Offset = new Vector2(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
+        cam.Offset = new Vector2( Raylib.GetScreenWidth(), Raylib.GetScreenHeight() )/ 2;
         cam.Rotation = 0f;
         cam.Zoom = 1f;
     }
