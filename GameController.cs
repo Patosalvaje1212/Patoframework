@@ -41,6 +41,8 @@ public static class GameController
     // TODO: make get entity method
     public static Dictionary<ulong, Entity> Entities = [];
 
+    public static LightBehaviour[] lights = [];
+
 
 
     // Is called once per frame. Used to call Entity.SelfUpdate()
@@ -113,25 +115,47 @@ public static class GameController
         
         
         // Shader Setup:
-        Shader DefaultShader = LoadShader(null, "Rendering/DefaultNormal.fs");
+        
+
+        
+
+        
+        #region Default Shader Setup
+
+        bool firstLoad = true;
+
+        Shader PixelateShader = LoadShader( null, "Rendering/Shaders/PixelateScreen.fs");
+
+        int pixelteLoc = GetShaderLocation(PixelateShader, "DownscaleRes");
+
+        float pixelateAmount = 5;
+
+
+        Shader DefaultShader = LoadShader(null, "Rendering/Shaders/DefaultNormal.fs");
+
 
         int normalMapLoc = GetShaderLocation(DefaultShader, "texture1");
 
-        
+        int lightPosesLoc = GetShaderLocation(DefaultShader, "LightPos");
+        int lNumberLoc = GetShaderLocation(DefaultShader, "LightCount");
 
-        
-        
-        int lLoc = GetShaderLocation(DefaultShader, "LightPos");
+
         int rLoc = GetShaderLocation(DefaultShader, "Resolution");
         int lrLoc = GetShaderLocation(DefaultShader, "lightResolution");
 
         int camOffLoc = GetShaderLocation(DefaultShader, "cameraOffset");
         int camZoomLoc = GetShaderLocation(DefaultShader, "cameraZoom");
 
+        int fallOffLoc = GetShaderLocation(DefaultShader, "Falloff");
+        int lightColorLoc = GetShaderLocation(DefaultShader, "LightColor");
+        int ambientColorLoc = GetShaderLocation(DefaultShader, "AmbientColor");
 
+        #endregion
 
 
         RenderTexture2D texture2D = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+
+        #region GameLoop
 
         while (!WindowShouldClose())
         {
@@ -161,33 +185,57 @@ public static class GameController
                 SpriteManager.LoadAllTextures();
             }
 
-            var screen = new Vector2(0, 0);
-            var screen2 = new Vector2(-500, -500);
-            var screen3 = new Vector2(200, 200);
-            var screen4 = new Vector2(-500, -1600);
-            
-            Vector3[] lPosList = [WorldToScreenSpace(screen), WorldToScreenSpace(screen2), WorldToScreenSpace(screen3), WorldToScreenSpace(screen4)];
+           
 
+            if(firstLoad)
+            {
+                SetShaderValue(PixelateShader, pixelteLoc, new Vector2(GetScreenWidth(), GetScreenHeight()) / pixelateAmount, ShaderUniformDataType.Vec2);
+            }
+
+            // Load Shader Variables
+            if(LightsManager.IsDirty() || firstLoad)
+            {
+                var LightPoses = LightsManager.GetNearestLights(5);
+
+                var LightColors = LightsManager.GetNearestLightsColors();
+
+                Console.WriteLine(LightPoses.Length);
+            
+                SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);
+                //SetShaderValueV(DefaultShader, lLoc, LightPoses, ShaderUniformDataType.Vec3, 4);
+
+                SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
+                
+                SetShaderValue(DefaultShader, rLoc, new float[2] { GetScreenWidth(), GetScreenHeight()}, ShaderUniformDataType.Vec2);
+                SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.cam.Target, ShaderUniformDataType.Vec2);
+                SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.cam.Zoom, ShaderUniformDataType.Float);
+
+                SetShaderValue(DefaultShader, lrLoc, LightsManager.LightResolution, ShaderUniformDataType.Int);
+
+                SetShaderValue(DefaultShader, fallOffLoc, LightsManager.LightFallOff, ShaderUniformDataType.Vec3);
+
+                Vector4 ambientLight = ColorNormalize(LightsManager.AmbientLight);
+
+
+                SetShaderValueV(DefaultShader, lightColorLoc, LightColors, ShaderUniformDataType.Vec4, LightPoses.Length);
+                SetShaderValue(DefaultShader, ambientColorLoc, ambientLight, ShaderUniformDataType.Vec4 );
+
+
+                firstLoad = false;
+            }
+
+        
+            
 
             var toRender = Renderers.Where((res) => res.Owner.Active).OrderBy((res) => res.Order).ToList();
 
-           
-
-            //SetShaderValue(DefaultShader, lrLoc, 15, ShaderUniformDataType.Int);
-
-            
-
-            SetShaderValueV(DefaultShader, lLoc, lPosList, ShaderUniformDataType.Vec3, 5);
-            SetShaderValue(DefaultShader, rLoc, new float[2] { GetScreenWidth(), GetScreenHeight()}, ShaderUniformDataType.Vec2);
-            SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.cam.Target, ShaderUniformDataType.Vec2);
-            SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.cam.Zoom, ShaderUniformDataType.Float);
-
-
-            BeginDrawing();
-
-            ClearBackground(Color.Beige);
+            BeginTextureMode(texture2D);
             
             BeginMode2D(CameraManager.I.cam);
+            
+            ClearBackground(Color.Beige);
+            
+            
             BeginShaderMode(DefaultShader);
         
 
@@ -212,7 +260,7 @@ public static class GameController
 
                             if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
                             {
-                                DrawTexturePro(loadedTexture, sprite, new Rectangle(Vector2.Zero, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), -toRender[i].Owner.GlobalPosition + Vector2.One * (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size) / 2, toRender[i].zRot, toRender[i].Color);
+                                DrawTexturePro(loadedTexture, sprite, new Rectangle(toRender[i].Owner.LocalPosition - toRender[i].Owner.GlobalPosition, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), toRender[i].Owner.LocalPosition, toRender[i].zRot, toRender[i].Color);
                             }
                             else
                             ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
@@ -237,21 +285,17 @@ public static class GameController
             EndShaderMode();
             EndMode2D();
             
+            EndTextureMode();
             
-            // Draw all the Debug Windows
-            //InspectorVisual.DrawSelectedPos();
-    
-            /*
-            
+
             BeginDrawing();
+            BeginShaderMode(PixelateShader);
 
-            ClearBackground(Color.White);
+                DrawTexturePro(texture2D.Texture, new Rectangle(0, 0, texture2D.Texture.Width, texture2D.Texture.Height), new Rectangle(0, 0, GetScreenWidth(), GetScreenHeight()), Vector2.Zero, 0, Color.White);
 
+            EndShaderMode();
 
-
-            DrawTexture(texture2D.Texture, 0, 0, Color.White);
-            
-                        */
+            // Draw all the Debug Windows
             
             #if DEBUG    
 
@@ -268,6 +312,8 @@ public static class GameController
             
         }
 
+        #endregion
+
         #if DEBUG
 
             RlImGui.Shutdown();
@@ -279,25 +325,15 @@ public static class GameController
         CloseWindow();
     }
 
+    
+
     static void UpdateGame()
     {
         //PhysicsManager.CallPhysicUpdate();
     }
 
 
-    static Vector3 WorldToScreenSpace(Vector3 position)
-    {
-        var screen = GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.cam) - new Vector2(0f, GetScreenHeight());
-        
-        return new Vector3(screen.X/ GetScreenWidth(), -screen.Y/ GetScreenHeight(), position.Z);
-    }
-
-    static Vector3 WorldToScreenSpace(Vector2 position)
-    {
-        var screen = GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.cam) - new Vector2(0f, GetScreenHeight());
-        
-        return new Vector3(screen.X/ GetScreenWidth(), -screen.Y/ GetScreenHeight(), 0.05f);
-    }
+    
 
 
     // Used by the Serializer to Open Data files, and load its content
@@ -315,9 +351,10 @@ public static class GameController
 
         Dictionary<ulong, Entity>? ConvertedData = JsonConvert.DeserializeObject<Dictionary<ulong, Entity>>(data, settings);
 
-        if(ConvertedData != null) Entities = ConvertedData;
+        if(ConvertedData != null) 
+            Entities = ConvertedData;
         else
-        throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
+            throw new FileLoadException("Error while loading Data. The target file might not exist, or is an unmatchable Json");
     }
 
 
