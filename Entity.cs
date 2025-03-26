@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using PatoframeWork.Inspector;
 
 
 namespace PatoframeWork;
@@ -8,13 +9,13 @@ namespace PatoframeWork;
 public class Entity
 {
     /// <summary>
-    /// Shown name of the Entity
+    /// Shown name of the Entity.
     /// </summary>
     [InspectorHide]
     public string Name = "Entity";
 
     /// <summary>
-    /// Inmutable Id of an Entity
+    /// Inmutable Id of an Entity.
     /// </summary>
     /// <remarks>
     /// Every Id is unique to that Entity. Use GameController.FindEntity(])to find an Entity by its Id
@@ -24,7 +25,7 @@ public class Entity
     public ulong Id { get; private set; }
 
     /// <summary>
-    /// Id of the Parent Entity
+    /// Id of the Parent Entity.
     /// </summary>
     /// <remarks>
     /// is 0 if has no Parent
@@ -33,20 +34,20 @@ public class Entity
 
 
     /// <summary>
-    /// Collection of the Ids of the Child Entities
+    /// Collection of the Ids of the Child Entities.
     /// </summary>
     [InspectorHide]
     public List<ulong> Childs { get; private set; } = [];
 
     /// <summary>
-    /// Local position of the Entity, relative to its Parent ( if it has any )
+    /// Local position of the Entity, relative to its Parent ( if it has any ).
     /// </summary>
     [InspectorShowOrder(3)]
     public Vector2 LocalPosition;
 
 
     /// <summary>
-    /// Collection of all the Behaviours an entity has 
+    /// Collection of all the Behaviours an entity has. 
     /// </summary>
     /// <remarks>
     /// Use FindBehaviours to get an specific one
@@ -57,7 +58,7 @@ public class Entity
 
     
     /// <summary>
-    /// Position of the Entity in relation to all its Parent Entities
+    /// Position of the Entity in relation to all its Parent Entities.
     /// </summary>
     /// <remarks>
     /// If no Parent Entities exist, its equal to LocalPosition 
@@ -78,7 +79,7 @@ public class Entity
     private bool receiveUpdates;
 
     /// <summary>
-    /// If enabled, the Behaviours of this Entity get updated each frame
+    /// If enabled, the Behaviours of this Entity get updated each frame.
     /// </summary>
     [InspectorShowOrder(2)]
     public bool ReceiveUpdates 
@@ -98,7 +99,7 @@ public class Entity
 
     private bool active = true;
     /// <summary>
-    /// If disabled, this Entity and its Behaviours will act like if they didnt exist
+    /// If disabled, this Entity and its Behaviours will act like if they didnt exist.
     /// </summary>
     [InspectorShowOrder(5)]
     public bool Active
@@ -120,10 +121,10 @@ public class Entity
     }
 
     /// <summary>
-    /// Its called once each frame, override to control how often the Behaviours of this Entity get Updated
+    /// Its called once each frame, override to control how often the Behaviours of this Entity get Updated.
     /// </summary>
     /// <remarks>
-    /// By default, it doesnt get called if the Entity is unactive, or if it doesnt receive updates
+    /// By default, it doesnt get called if the Entity is unactive, or if ReceiveUpdates is set to false
     /// </remarks>
     public virtual void SelfUpdate()
     {
@@ -136,7 +137,7 @@ public class Entity
     }
 
     /// <summary>
-    /// This constructor initializes a new Entity
+    /// This constructor initializes a new Entity.
     /// </summary>
     public Entity()
     {
@@ -188,6 +189,9 @@ public class Entity
         OnLoad();
     }
 
+    /// <summary>
+    /// Remove the Entity from the Entity List.
+    /// </summary>
     public void Delete(bool isInstant = false, bool DeleteChilds = false)
     {
         if(!isInstant) OnDelete();
@@ -224,17 +228,17 @@ public class Entity
     }
 
     /// <summary>
-    /// Override this method to set custom behaviour when this object gets Loaded/Instantiated/Enabled into a scene
+    /// Override this method to set custom behaviour when this object gets Loaded/Instantiated/Enabled into a scene.
     /// </summary>
     protected virtual void OnLoad() {}
 
     /// <summary>
-    /// Override this method to set custom behaviour when this object gets disabled into a scene
+    /// Override this method to set custom behaviour when this object gets disabled into a scene.
     /// </summary>
     protected virtual void OnUnload() {}
 
     /// <summary>
-    /// Override this method to set custom behaviour when this object gets Deleted
+    /// Override this method to set custom behaviour when this object gets Deleted.
     /// </summary>
     protected virtual void OnDelete() {}
 
@@ -249,6 +253,9 @@ public class Entity
     /// </remarks>
     public void SetParent(Entity? newParent)
     {
+        if(Parent != 0) 
+                GameController.FindEntity(Parent).Childs.Remove(Id);
+
         if(newParent != null)
         {
             if(!IsMyChild(newParent) && newParent != this)
@@ -260,37 +267,52 @@ public class Entity
             ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
             
         } else
-        {
-            if(Parent != 0) 
-                GameController.FindEntity(Parent).Childs.Remove(Id);
-            
+        { 
             Parent = 0;
         }
         
     }
 
-    public void SetParent(ulong newParent)
+    /// <summary>
+    /// Changes the current Parent of the Entity with ID <paramref name="newParentID"/>.
+    /// </summary>
+    /// <remarks>
+    /// If <paramref name="newParentID"/> is 0, it unparents the Entity.
+    /// </remarks>
+    public void SetParent(ulong newParentID)
     {
-        if(GameController.TryFindEntity(newParent) is Entity value and not null )
-            SetParent(value);
-        else if(Parent == 0) 
-        {
+        if(Parent != 0) 
             GameController.FindEntity(Parent).Childs.Remove(Id);
+
+        if(newParentID != 0)
+        {
+            if(!IsMyChild(newParentID) && newParentID != Id)
+            {
+                GameController.FindEntity(newParentID).Childs.Add(this.Id);
+                Parent = newParentID;
+
+            } else
+            ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
+            
+        } else
+        {
+            
             Parent = 0;
         }
-        else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
 
     }
 
     /// <summary>
     /// Changes the current Parent of the Entity to <paramref name="newParent"/>, without updating the Parent about it.
     /// </summary>
-    public void SetParentNoNotify(Entity newParent)
+    public void SetParentNoNotify(ulong newParent)
     {
-        if(newParent != null)
+        if(newParent != 0)
         {
-            newParent.Childs.Add(this.Id);
-            Parent = newParent.Id;
+            if(GameController.TryFindEntity(newParent) != null)
+                Parent = newParent;
+            else
+                throw new ArgumentNullException(nameof(newParent), $"The Entity with ID {newParent} could not be found.");
 
         } else
         {
@@ -302,7 +324,7 @@ public class Entity
 
     /// <summary>
     /// Checks if the Entity <paramref name="entity"/>, is a child of the current Entity.
-    /// <paramref name="SearchRecursively"/> makes it search recursively in the childs of childs
+    /// <paramref name="SearchRecursively"/> makes it search recursively in the childs of childs.
     /// </summary>
     public bool IsMyChild(Entity entity, bool SearchRecursively = true)
     {
@@ -323,7 +345,7 @@ public class Entity
 
     /// <summary>
     /// Checks if the Entity <paramref name="entityId"/>, is a child of the current Entity.
-    /// <paramref name="SearchRecursively"/> makes it search recursively in the childs of childs
+    /// <paramref name="SearchRecursively"/> makes it search recursively in the childs of childs.
     /// </summary>
     public bool IsMyChild(ulong entityId, bool SearchRecursively = true)
     {
@@ -342,26 +364,39 @@ public class Entity
         }
     }
 
-
+    /// <summary>
+    /// Creates an exact copy of the current entity ( with a different ID ).
+    /// </summary>
+    /// <remarks>
+    /// Copies the Behaviours and Child Entities as well
+    /// </remarks>
     public Entity Duplicate()
     {
         Entity newEnt = new(Name)
         {
-            Parent = this.Parent,
-            GlobalPosition = this.GlobalPosition,
-            Active = this.active
+            Active = this.active,
+            ReceiveUpdates = this.receiveUpdates,
+            LocalPosition = this.LocalPosition
         };
 
-        for (int i = 0; i < Behaviours.Count; i++)
+        newEnt.SetParent(Parent);
+
+        var InitList = Behaviours.ToList();
+
+        for (int i = 0; i < InitList.Count; i++)
         {
-            Behaviours[i].CloneBehaviour(newEnt);
+            var newBeh = InitList[i].CloneBehaviour();
+
+            newBeh.SwitchOwner(newEnt);
         }
+        
+        var InitChilds = Childs.ToList();
 
-        for(int i = 0; i < Childs.Count; i++)
+        for(int i = 0; i < InitChilds.Count; i++)
         {
-            var childEnt = GameController.FindEntity(Childs[i]).Duplicate();
+            var childEnt = GameController.FindEntity(InitChilds[i]).Duplicate();
 
-            childEnt.Parent = newEnt.Id;
+            childEnt.SetParent(newEnt.Id);
         }
 
 

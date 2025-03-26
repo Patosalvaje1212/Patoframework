@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using PatoframeWork.Inspector;
 using PatoframeWork.Rendering;
 using Raylib_cs;
 
@@ -66,11 +68,17 @@ public static class BehaviourHelper
         throw new ArgumentException("Cannot add " + nameof(T) + " to an empty Entity");
     }
 
-    public static Behaviour AddBehaviour(this Entity entity, Type BehaviourType)
+    /// <summary>
+    /// Adds a Behaviour of type <paramref name="behaviourType"/> to a target entity
+    /// </summary>
+    /// <returns>
+    /// The added Behaviour
+    /// </returns>
+    public static Behaviour AddBehaviour(this Entity entity, Type behaviourType)
     {
         if(entity != null)
         {
-            Behaviour? beh = (Behaviour?)Activator.CreateInstance(BehaviourType);
+            Behaviour? beh = (Behaviour?)Activator.CreateInstance(behaviourType);
 
             if(beh != null)
             {
@@ -82,10 +90,10 @@ public static class BehaviourHelper
                 return beh;
             }
             else
-            throw new ArgumentException("Could not find type of " + BehaviourType);
+            throw new ArgumentException("Could not find type of " + behaviourType);
         }
         else
-        throw new ArgumentException("Cannot add " + BehaviourType + " to an empty Entity");
+        throw new ArgumentException("Cannot add " + behaviourType + " to an empty Entity");
     }
 
     /// <summary>
@@ -114,23 +122,45 @@ public static class BehaviourHelper
         return null;
     }
 
-    public static void CloneBehaviour(this Behaviour behaviour, Entity? target = null)
+    /// <summary>
+    /// Sets the target Behaviour Owner to the Entity <paramref name="newOwner"/>.
+    /// </summary>
+    public static void SwitchOwner(this Behaviour currBehaviour, Entity newOwner)
     {
-        Behaviour newB;
-        if(target == null) newB = behaviour.Owner.AddBehaviour(behaviour.GetType());
-        else newB = target.AddBehaviour(behaviour.GetType());
+        currBehaviour.Owner.Behaviours.Remove(currBehaviour);
 
-        newB.OnAdd();
+        currBehaviour.Owner = newOwner;
+        newOwner.Behaviours.Add(currBehaviour);
+    }
+
+    /// <summary>
+    /// Creates an exact copy of the targe Behaviour
+    /// </summary>
+    /// <returns>
+    /// The cloned Behaviour
+    /// </returns>
+    public static Behaviour CloneBehaviour(this Behaviour behaviour)
+    {
+        
+        var beh = behaviour.Owner.AddBehaviour(behaviour.GetType());
+
 
         foreach (var property in behaviour.GetType().GetProperties())
         {
-            property.SetValue(newB, property.GetValue(behaviour));
+            property.SetValue(beh, property.GetValue(behaviour));
         }
 
-        foreach (var property in behaviour.GetType().GetFields())
+        foreach (var field in behaviour.GetType().GetFields())
         {
-            property.SetValue(newB, property.GetValue(behaviour));
+            field.SetValue(beh, field.GetValue(behaviour));
         }
+
+        beh.OnAdd();
+
+        Console.WriteLine(beh.GetType());
+        
+
+        return beh;
     }
     #endregion
 

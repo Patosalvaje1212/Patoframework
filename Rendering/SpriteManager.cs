@@ -7,6 +7,9 @@ using Raylib_cs;
 
 namespace PatoframeWork.Rendering;
 
+/// <summary>
+/// Main class to handle Sprite Loading and Unloading Logic;
+/// </summary>
 public static class SpriteManager
 {
     public static Dictionary<ulong, ImageData> LoadedImages { get; private set; } = [];
@@ -18,6 +21,11 @@ public static class SpriteManager
 
     public static Texture2D? DefaultText { get; private set; }
 
+
+    /// <summary>
+    /// Searches a .pfdata file in <paramref name="folderPath"/>, and loads its data.
+    /// </summary>
+    
     public static void LoadTextureFolder(string folderPath, bool cleanUp = true)
     {
 

@@ -1,16 +1,23 @@
-﻿using Raylib_cs;
+﻿using System.Numerics;
 
-using System.Numerics;
-using PatoframeWork.Rendering;
-
-
-using static Raylib_cs.Raylib;
-using rlImGui_cs;
-using ImGuiNET;
 using Newtonsoft.Json;
 
 
+using Raylib_cs;
+using static Raylib_cs.Raylib;
+
+using rlImGui_cs;
+using ImGuiNET;
+
+using Patoframework.Inspector;
+using PatoframeWork.Rendering;
+
 namespace PatoframeWork;
+
+/// <summary>
+/// Base class for the game Loop, it holds all the Enitites.
+/// </summary>
+
 public static class GameController
 {
 
@@ -49,15 +56,6 @@ public static class GameController
     // Frame Counter 
     public static int CurrentFrame { get; private set; } = 0;
 
-
-
-    // Rend--
-    
-    struct Light()
-    {
-        public int enabled = 1;
-        public Vector2 position = Vector2.Zero;
-    }
 
     public static void MainThread()
     {
@@ -238,7 +236,7 @@ public static class GameController
                 for (int i = 0; i < toRender.Count; i++)
                 {
 
-                    if(toRender[i].RenderType == RendererBehaviour.ShapeType.Image)
+                    if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Image)
                     {            
                         if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
                         {
@@ -265,14 +263,14 @@ public static class GameController
                         } else
                         ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
 
-                    } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Square)
+                    } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Square)
 
                     {
                         SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
 
                         DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
 
-                    } else if(toRender[i].RenderType == RendererBehaviour.ShapeType.Circle)
+                    } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Circle)
                     {
                         SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
                      
@@ -327,12 +325,16 @@ public static class GameController
 
     static void UpdateGame()
     {
-        PhysicsManager.CallPhysicUpdate();
+        //PhysicsManager.CallPhysicUpdate();
     }
 
 
     #region Scene Data
     // Used by the Serializer to Open Data files, and load its content
+
+    /// <summary>
+    /// Loads an Entity list from a .json file.
+    /// </summary>
     public static void LoadScene()
     {
         
@@ -355,6 +357,10 @@ public static class GameController
 
     
     // Used by the Serializer to Save all data to files
+
+    /// <summary>
+    /// Saves all the Entities in a .json file.
+    /// </summary>
     public static void SaveScene()
     {   
         string jsonStringGen = JsonConvert.SerializeObject(Entities, settings);
@@ -366,26 +372,42 @@ public static class GameController
     
     #region Entity List Helpers
 
+    /// <summary>
+    /// Retrieves the Entity with matching ID, or <c>null</c> if no Entity is found.
+    /// </summary>
     public static Entity? TryFindEntity(ulong ID)
     {
         return Entities.TryGetValue(ID, out Entity? value) ? value : null;
     }
 
+    /// <summary>
+    /// Retrieves the Entity with matching ID.
+    /// </summary>
     public static Entity FindEntity(ulong ID)
     {
         return Entities[ID];
     }
 
+    /// <summary>
+    /// Adds an Entity to the Entity list. Not recommended to use unless you really know what you are doing.
+    /// </summary>
     public static void AddEntity(Entity entity)
     {
         Entities.Add(entity.Id, entity);
     }
 
+    /// <summary>
+    /// Removes an Entity from the Entity list. Not recommended to use unless you really know what you are doing.
+    /// </summary>
     public static void RemoveEntity(ulong ID)
     {
         Entities.Remove(ID);
     }
 
+
+    /// <summary>
+    /// Retrieves the lowest, unoccupied ID from the Entity list.
+    /// </summary>
     public static ulong GetLowestFreeID()
     {
         ulong Lowest = 1;
@@ -399,6 +421,9 @@ public static class GameController
         return Lowest;
     }
 
+    /// <summary>
+    /// Returns a list containing all the Entities.
+    /// </summary>
     public static List<Entity> GetAllEntities()
     {
         return [.. Entities.Values];
@@ -407,11 +432,18 @@ public static class GameController
     #endregion
 
     #region Renderer List Helpers
+    
+    /// <summary>
+    /// Adds the RendererBehaviour <paramref name="rendBeh"/> to the Renderers list.
+    /// </summary>
     public static void AddRenderer(RendererBehaviour rendBeh)
     {
         Renderers.Add(rendBeh);
     }
 
+    /// <summary>
+    /// Removes the RendererBehaviour <paramref name="rendBeh"/> from the Renderers list.
+    /// </summary>
     public static void RemoveRenderer(RendererBehaviour rendBeh)
     {
         Renderers.Remove(rendBeh);
