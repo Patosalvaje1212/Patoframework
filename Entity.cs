@@ -17,7 +17,7 @@ public class Entity
     /// Inmutable Id of an Entity
     /// </summary>
     /// <remarks>
-    /// Every Id is unique to that Entity. Use GameController.entities[] to find an Entity by its Id
+    /// Every Id is unique to that Entity. Use GameController.FindEntity(])to find an Entity by its Id
     /// </remarks>
 
     [InspectorShowOrder(6), InspectorNonEditable]
@@ -67,7 +67,7 @@ public class Entity
     {
         get
         {   
-            return (Parent != 0 ? GameController.Entities[Parent].GlobalPosition : Vector2.Zero) + LocalPosition;
+            return (Parent != 0 ? GameController.FindEntity(Parent).GlobalPosition : Vector2.Zero) + LocalPosition;
         }
         set
         {
@@ -105,7 +105,7 @@ public class Entity
     {
         get
         {
-            return Parent != 0 ? GameController.Entities[Parent].Active && active : active;
+            return Parent != 0 ? GameController.FindEntity(Parent).Active && active : active;
         }
         set
         {
@@ -140,8 +140,6 @@ public class Entity
     /// </summary>
     public Entity()
     {
-        Id = GetLowestID();
-
         Setup();
     }
 
@@ -152,8 +150,6 @@ public class Entity
     public Entity(string name)
     {
         this.Name = name;
-
-        Id = GetLowestID();
         
         Setup();
     }
@@ -166,14 +162,14 @@ public class Entity
     {
         this.SetParent(parent);
 
-        Id = GetLowestID();
-        
         Setup();
     }
 
     void Setup()
     {
-        GameController.Entities.Add(Id, this);
+        Id = GameController.GetLowestFreeID();
+
+        GameController.AddEntity(this);
 
         OnLoad();
     }
@@ -196,7 +192,7 @@ public class Entity
     {
         if(!isInstant) OnDelete();
 
-        if(GameController.Entities.ContainsKey(Id))
+        if(GameController.TryFindEntity(Id) is not null)
         {
             this.SetParent(null);
             
@@ -204,7 +200,7 @@ public class Entity
             {
                 for (int i = 0; i < Childs.Count; i++)
                 {
-                    GameController.Entities[Childs[i]].Delete(isInstant, true);
+                    GameController.FindEntity(Childs[i]).Delete(isInstant, true);
                 }
 
 
@@ -212,7 +208,7 @@ public class Entity
             {
                 for (int i = 0; i < Childs.Count; i++)
                 {
-                    GameController.Entities[Childs[i]].SetParent(null);
+                    GameController.FindEntity(Childs[i]).SetParent(null);
                 }
             }
             
@@ -221,7 +217,8 @@ public class Entity
             {
                 Behaviours[i].RemoveBehaviour();
             }
-            GameController.Entities.Remove(Id);
+
+            GameController.RemoveEntity(Id);
         }
         else throw new InvalidDataException("Tried to delete a non-existing Entity");
     }
@@ -265,7 +262,7 @@ public class Entity
         } else
         {
             if(Parent != 0) 
-                GameController.Entities[Parent].Childs.Remove(Id);
+                GameController.FindEntity(Parent).Childs.Remove(Id);
             
             Parent = 0;
         }
@@ -274,11 +271,11 @@ public class Entity
 
     public void SetParent(ulong newParent)
     {
-        if(GameController.Entities.TryGetValue(newParent, out Entity? value))
+        if(GameController.TryFindEntity(newParent) is Entity value and not null )
             SetParent(value);
-        else if(Parent != 0) 
+        else if(Parent == 0) 
         {
-            GameController.Entities[Parent].Childs.Remove(Id);
+            GameController.FindEntity(Parent).Childs.Remove(Id);
             Parent = 0;
         }
         else ErrorManager.LogError("Did not find Entity with ID: " + newParent);
@@ -302,22 +299,6 @@ public class Entity
         
     }
 
-    /// <summary>
-    /// Searches the smallest unocuppied Id in GameController.Entities
-    /// </summary>
-    public static ulong GetLowestID()
-    {
-        ulong Lowest = 1;
-
-        List<ulong> List = [.. GameController.Entities.Keys.Order()];
-        for (int i = 0; i < List.Count; i++)
-        {
-            if(Lowest == List[i]) Lowest ++;
-        }
-
-        return Lowest;
-    }
-
 
     /// <summary>
     /// Checks if the Entity <paramref name="entity"/>, is a child of the current Entity.
@@ -333,7 +314,7 @@ public class Entity
             if(SearchRecursively)
             for (int i = 0; i < Childs.Count; i++)
             {
-                if(GameController.Entities[Childs[i]].IsMyChild(entity)) return true;
+                if(GameController.FindEntity(Childs[i]).IsMyChild(entity)) return true;
             }
 
             return false;
@@ -354,7 +335,7 @@ public class Entity
             if(SearchRecursively)
             for (int i = 0; i < Childs.Count; i++)
             {
-                if(GameController.Entities[Childs[i]].IsMyChild(entityId)) return true;
+                if(GameController.FindEntity(Childs[i]).IsMyChild(entityId)) return true;
             }
 
             return false;
@@ -364,11 +345,12 @@ public class Entity
 
     public Entity Duplicate()
     {
-        Entity newEnt = new(Name);
-
-        newEnt.Parent = this.Parent;
-        newEnt.GlobalPosition = this.GlobalPosition;
-        newEnt.Active = this.active;
+        Entity newEnt = new(Name)
+        {
+            Parent = this.Parent,
+            GlobalPosition = this.GlobalPosition,
+            Active = this.active
+        };
 
         for (int i = 0; i < Behaviours.Count; i++)
         {
@@ -377,7 +359,7 @@ public class Entity
 
         for(int i = 0; i < Childs.Count; i++)
         {
-            var childEnt = GameController.Entities[Childs[i]].Duplicate();
+            var childEnt = GameController.FindEntity(Childs[i]).Duplicate();
 
             childEnt.Parent = newEnt.Id;
         }

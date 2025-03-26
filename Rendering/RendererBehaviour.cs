@@ -7,12 +7,12 @@ public class RendererBehaviour : Behaviour
     public Color Color = Color.White;
     public float Size = 15;
 
-    public enum ShapeType
+    public enum VisualShapeType
     {
         Circle, Square, Image
     }
 
-    public ShapeType RenderType;
+    public VisualShapeType RenderType;
 
     
     public ulong ImageID, SpriteID;
@@ -24,16 +24,15 @@ public class RendererBehaviour : Behaviour
 
     public override void OnAdd()
     {
-        GameController.Renderers.Add(this);
+        base.OnAdd();
+
+        GameController.AddRenderer(this);
     }
 
     public override void OnRemove()
     {
-        GameController.Renderers.Remove(this);
-    }
+        base.OnAdd();
 
-    public override void UpdateEffect()
-    {
-        //
+        GameController.RemoveRenderer(this);
     }
 }

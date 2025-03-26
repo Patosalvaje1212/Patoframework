@@ -9,10 +9,10 @@ namespace PatoframeWork.Rendering;
 
 public static class SpriteManager
 {
-
     public static Dictionary<ulong, ImageData> LoadedImages { get; private set; } = [];
 
     public static bool IsDirty{ get; private set; } = false;
+
 
     public static Image DefaultImg { get; set; } = Raylib.GenImageColor(1, 1, new Color(128, 128, 255));
 
@@ -20,9 +20,11 @@ public static class SpriteManager
 
     public static void LoadTextureFolder(string folderPath, bool cleanUp = true)
     {
+
         if(cleanUp && LoadedImages.Count > 0) UnloadAllImages();
 
         IsDirty = true;
+
 
 
         var Files = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath));
@@ -126,6 +128,7 @@ public static class SpriteManager
         IsDirty = false;
 
         DefaultText ??= Raylib.LoadTextureFromImage(DefaultImg);
+
 
 
         foreach (var image in LoadedImages.Values)
