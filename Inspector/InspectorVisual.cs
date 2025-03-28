@@ -30,6 +30,7 @@ public static class InspectorVisual
 
     public static void ImGUIBeh()
     {
+        
         LoadPopus();
         ImGui.ShowDemoWindow();
 
@@ -46,7 +47,7 @@ public static class InspectorVisual
                     {
                         OpenFileSelector = true;
 
-                        SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
+                        SaveLocation = "./";
 
                         if (string.IsNullOrEmpty(SaveLocation))
                         {
@@ -69,7 +70,7 @@ public static class InspectorVisual
                 {
                     if (GameController.fileSaveName == "")
                     {
-                        SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
+                        SaveLocation = "./";
 
                         if (string.IsNullOrEmpty(SaveLocation))
                         {
@@ -85,7 +86,7 @@ public static class InspectorVisual
 
                 if (ImGui.MenuItem("Save As"))
                 {
-                    SaveLocation = AppDomain.CurrentDomain.BaseDirectory;
+                    SaveLocation = "./";
 
                     if (string.IsNullOrEmpty(SaveLocation))
                     {
@@ -141,25 +142,8 @@ public static class InspectorVisual
         if (SaveFileSelector) ImGui.OpenPopup("Save File");
 
 
-        ImGui.Begin("Entities");
-
-        ImGui.PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.DarkGreen));
-        if (ImGui.SmallButton("Create Entity"))
-        {
-            var t = new Entity("New Entity");
-            DEBUG_Selected = t;
-        }
-        ImGui.PopStyleColor();
-
-        ImGui.SeparatorText("Entities -- ");
-
-        foreach (var entity in GameController.GetAllEntities().Where((res) => res.Parent == 0))
-        {
-            DrawRecursiveList(entity);
-        }
-
-        ImGui.End();
-
+        DrawEntityInspector();
+        
 
         ImGui.Begin("Entity Info");
 
@@ -170,9 +154,16 @@ public static class InspectorVisual
             ImGui.SeparatorText("");
 
             DrawBehaviourSelector();
+
+            
+
         }
 
         ImGui.End();
+    
+        
+
+        
     }
 
     #region Draw Entity Info
@@ -250,6 +241,32 @@ public static class InspectorVisual
                 behC++;
             }
         }
+    }
+
+
+    static void DrawEntityInspector()
+    {
+        ImGui.Begin("Entities");
+
+        ImGui.PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.DarkGreen));
+        if (ImGui.SmallButton("Create Entity"))
+        {
+            var t = new Entity("New Entity");
+            DEBUG_Selected = t;
+
+            t.GlobalPosition = CameraManager.I.Cam.Target;
+        }
+        ImGui.PopStyleColor();
+
+        ImGui.SeparatorText("Entities -- ");
+
+        foreach (var entity in GameController.GetAllEntities().Where((res) => res.Parent == 0))
+        {
+            DrawRecursiveList(entity);
+        }
+
+        ImGui.End();
+
     }
 
     static object?[] GetOrderedArray(PropertyInfo[] propertyInfos, FieldInfo[] fieldInfos)
@@ -530,17 +547,21 @@ public static class InspectorVisual
                 {
                     if (ImGui.MenuItem("Duplicate"))
                     {
-                        REntity.Duplicate();
+                        var ent = REntity.Duplicate();
+
+                        DEBUG_Selected = ent;
                     }
 
                     if (ImGui.MenuItem("Delete"))
                     {
                         REntity.Delete();
+                        DEBUG_Selected = null;
                     }
 
                     if (ImGui.MenuItem("Delete -- Chain"))
                     {
                         REntity.Delete(true, true);
+                        DEBUG_Selected = null;
                     }
 
 
@@ -597,11 +618,13 @@ public static class InspectorVisual
                     if (ImGui.MenuItem("Delete"))
                     {
                         REntity.Delete();
+                        DEBUG_Selected = null;
                     }
 
                     if (ImGui.MenuItem("Delete -- Chain"))
                     {
                         REntity.Delete(true, true);
+                        DEBUG_Selected = null;
                     }
 
 
@@ -619,7 +642,7 @@ public static class InspectorVisual
     // Draw File Selector (Choose only folder /// Choose only Json)
     static bool DrawFileSelector(string? fileType, ref string? DestPath, ref string? FileName)
     {
-        ImGui.BeginGroup();
+        ImGui.BeginChild("FileInspector", new Vector2(-30, -80), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders);
         if (SaveLocation != null)
         {
             List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).OrderBy(res => !Directory.Exists(res))];
@@ -635,25 +658,25 @@ public static class InspectorVisual
                     ImGui.SameLine();
 
                     if (isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
-                    else if (fileType != null && Path.GetExtension(file) == fileType || fileType == null && isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
+                    else if (fileType != null && Path.GetExtension(file) == fileType) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
                     else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
 
                     if (ImGui.Button(Path.GetFileName(file)))
                     {
 
-                        DestPath = Path.GetDirectoryName(file) + "/";
+                        DestPath = Path.GetFullPath(file);
 
-                        if (!isDirectory)
+                        if (!isDirectory && fileType != null)
                         {
                             FileName = Path.GetFileName(file);
 
-                            ImGui.EndGroup();
+                            ImGui.EndChild();
                             ImGui.PopStyleColor();
 
                             return true;
                         }
 
-                        SaveLocation = file;
+                        SaveLocation = DestPath;
                     }
                     ImGui.PopStyleColor();
 
@@ -663,20 +686,20 @@ public static class InspectorVisual
         else
             throw new FileLoadException("Error while loading the Folder data. Please check the Engine has access to the requested folder");
 
-        ImGui.EndGroup();
+        ImGui.EndChild();
 
         if (fileType == null)
         {
 
             ImGui.Separator();
 
-            ImGui.Dummy(Vector2.One * 10 + Vector2.UnitX * 150);
+            ImGui.Dummy(Vector2.One * 10 + Vector2.UnitX * (ImGui.GetWindowWidth() - 150));
             ImGui.SameLine();
             ImGui.BeginGroup();
             if (ImGui.Button("Select folder"))
             {
                 DestPath = Path.GetDirectoryName(SaveLocation) + "/";
-                FileName = SaveName + ".json";
+                FileName = SaveName + fileType;
 
                 ImGui.EndGroup();
 
@@ -694,9 +717,6 @@ public static class InspectorVisual
     #endregion
     static void LoadPopus()
     {
-
-
-
         if (ImGui.BeginPopup("Cant be empty", ImGuiWindowFlags.ChildMenu))
         {
             ImGui.SetItemDefaultFocus();
@@ -772,7 +792,12 @@ public static class InspectorVisual
 
             if (ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
             {
-                if (SaveLocation != null && Directory.GetParent(SaveLocation) is DirectoryInfo info)
+                if(SaveLocation == null)
+                {
+                    SaveLocation = "./";
+                }
+
+                if (Directory.GetParent(SaveLocation) is DirectoryInfo info)
                 {
                     if (info != null) SaveLocation = info.FullName;
                 }
@@ -816,7 +841,43 @@ public static class InspectorVisual
     public static void DrawSelectedPos()
     {
         if (DEBUG_Selected != null)
-            Raylib.DrawRing(DEBUG_Selected.GlobalPosition, 150, 145, 0, 360, 100, Color.Black);
+            Raylib.DrawCircle((int)DEBUG_Selected.GlobalPosition.X, (int)DEBUG_Selected.GlobalPosition.Y, 10, Raylib.ColorAlpha(Color.White, 0.4f));
+    }
+
+
+    static Vector2 lastMousePos = Vector2.Zero;
+    public static void ClickAndDrag()
+    {
+        CameraManager.I.freeRoam = !ImGui.GetIO().WantCaptureMouse;
+        
+        if(Raylib.IsKeyDown(KeyboardKey.LeftControl) && Raylib.IsKeyPressed(KeyboardKey.S))
+        {
+            Console.WriteLine("Saving");
+            SaveFileSelector = true;
+            ImGui.OpenPopup("Open File");
+        }
+
+        if(ImGui.GetIO().WantCaptureMouse) return;
+
+        if(Raylib.IsMouseButtonPressed(MouseButton.Right))
+        {
+            lastMousePos = Raylib.GetMousePosition();
+        }
+
+        if(Raylib.IsMouseButtonDown(MouseButton.Right))
+        {
+            CameraManager.I.Cam.Target = CameraManager.I.Cam.Target - (Raylib.GetMousePosition() - lastMousePos);
+            lastMousePos = Raylib.GetMousePosition();
+        }
+
+        if(Raylib.IsMouseButtonDown(MouseButton.Left))
+        {
+            var MousePos = Raylib.GetMousePosition() + CameraManager.I.Cam.Target + CameraManager.I.Cam.Offset;
+
+            var ent = GameController.GetAllRenderers().Where(res => Raymath.Vector2Distance(res.Owner.GlobalPosition, MousePos) < res.Size).OrderByDescending(res => Raymath.Vector2Distance(res.Owner.GlobalPosition, MousePos)).FirstOrDefault((RendererBehaviour?)null);
+
+            DEBUG_Selected = ent?.Owner ?? null;
+        }
     }
 
 #endif

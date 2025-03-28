@@ -25,8 +25,8 @@ public static class LightsManager
 
     public static bool IsDirty()
     {
-        if(CameraManager.I.lastPos != CameraManager.I.cam.Target
-        || CameraManager.I.lastRotZoom != new System.Numerics.Vector2(CameraManager.I.cam.Rotation, CameraManager.I.cam.Zoom)) 
+        if(CameraManager.I.lastPos != CameraManager.I.Cam.Target
+        || CameraManager.I.lastRotZoom != new System.Numerics.Vector2(CameraManager.I.Cam.Rotation, CameraManager.I.Cam.Zoom)) 
         return true;
 
 
@@ -45,7 +45,7 @@ public static class LightsManager
 
         LightBehaviour[] nearLights = new LightBehaviour[amount];
 
-        List<LightBehaviour> orderedLights = [.. Lights.Where(res => res.Owner.Active).OrderBy(res => Raymath.Vector2Distance(CameraManager.I.cam.Target, res.Owner.GlobalPosition))];
+        List<LightBehaviour> orderedLights = [.. Lights.Where(res => res.Owner.Active).OrderBy(res => Raymath.Vector2Distance(CameraManager.I.Cam.Target, res.Owner.GlobalPosition))];
 
         nearLights = [.. orderedLights.Where(res => orderedLights.IndexOf(res) < amount ) ];
 
@@ -86,7 +86,7 @@ public static class LightsManager
 
     static Vector3 WorldToScreenSpace(Vector3 position)
     {
-        var screen = Raylib.GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.cam);
+        var screen = Raylib.GetWorldToScreen2D(new Vector2(position.X, position.Y), CameraManager.I.Cam);
         
         return new Vector3(screen.X / Raylib.GetScreenWidth(), - screen.Y / Raylib.GetScreenHeight(), position.Z);
     }

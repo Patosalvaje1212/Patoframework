@@ -6,11 +6,13 @@ in vec4 fragColor;
 
 uniform sampler2D texture0; 
 
-uniform vec2 DownscaleRes = vec2(190, 100);
+uniform vec2 DownscaleRes;
 
 void main()
 {
-    vec2 newFragTextCoord = - round(fragTexCoord * DownscaleRes - DownscaleRes) / DownscaleRes;
+    vec2 newFragTextCoord =  round(fragTexCoord * DownscaleRes - DownscaleRes) / DownscaleRes;
+    
+    newFragTextCoord = vec2(newFragTextCoord.r, newFragTextCoord.g);
 
     vec4 DiffuseColor = texture(texture0, newFragTextCoord);
 

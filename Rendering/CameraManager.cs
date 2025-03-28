@@ -25,7 +25,8 @@ public class CameraManager
     /// <summary>
     /// Target 2D Camera.
     /// </summary>
-    public Camera2D cam;
+    public Camera2D Cam;
+
 
     /// <summary>
     /// Camera move Velocity.
@@ -47,7 +48,7 @@ public class CameraManager
     /// </summary>
     public Vector2 lastRotZoom;
 
-    
+    public Vector2 CamDelta => lastPos - Cam.Target;
 
     CameraManager()
     {
@@ -60,52 +61,58 @@ public class CameraManager
     /// </summary>
     public void UpdateCamera()
     {
-        lastPos = cam.Target;
-        lastRotZoom = new Vector2(cam.Rotation, cam.Zoom);
+        lastPos = Cam.Target;
+        lastRotZoom = new Vector2(Cam.Rotation, Cam.Zoom);
 
 
         if(freeRoam)
         {
             if(Raylib.IsKeyDown(KeyboardKey.D))
             {
-                cam.Target += Vector2.UnitX * Velocity / cam.Zoom;
+                Cam.Target += Vector2.UnitX * Velocity / Cam.Zoom;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.A))
             {
-                cam.Target += Vector2.UnitX * -Velocity / cam.Zoom;
+                Cam.Target += Vector2.UnitX * -Velocity / Cam.Zoom;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.W))
             {
-                cam.Target += Vector2.UnitY * -Velocity / cam.Zoom;
+                Cam.Target += Vector2.UnitY * -Velocity / Cam.Zoom;
             }
 
             if(Raylib.IsKeyDown(KeyboardKey.S))
             {
-                cam.Target += Vector2.UnitY * Velocity / cam.Zoom;
+                Cam.Target += Vector2.UnitY * Velocity / Cam.Zoom;
             }
             
             if(Raylib.IsKeyDown(KeyboardKey.Q))
             {
-                cam.Rotation += Velocity / 15;
+                Cam.Rotation += Velocity / 15;
             }
 
             if(Raylib.IsKeyDown(KeyboardKey.E))
             {
-                cam.Rotation += -Velocity / 15;
+                Cam.Rotation += -Velocity / 15;
             }
 
             if(Raylib.IsKeyDown(KeyboardKey.Z))
             {
-                cam.Zoom += Velocity / 1500;
+                Cam.Zoom += Velocity / 1500;
             }
 
             if(Raylib.IsKeyDown(KeyboardKey.X))
             {
-                cam.Zoom += -Velocity / 1500;
+                Cam.Zoom += -Velocity / 1500;
             }
         }
+    }
+
+
+    public void MoveCam(Vector2 pos)
+    {
+        Cam.Target = pos;
     }
 
     /// <summary>
@@ -113,9 +120,10 @@ public class CameraManager
     /// </summary>
     public void ResetCamera()
     {
-        cam.Target = Vector2.Zero;
-        cam.Offset = new Vector2( Raylib.GetScreenWidth(), Raylib.GetScreenHeight() )/ 2;
-        cam.Rotation = 0f;
-        cam.Zoom = 1f;
+        Cam.Target = Vector2.Zero;
+        Cam.Offset = new Vector2( Raylib.GetScreenWidth(), Raylib.GetScreenHeight() )/ 2;
+        Cam.Rotation = 0f;
+        Cam.Zoom = 1f;
+
     }
 }
