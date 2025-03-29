@@ -114,7 +114,7 @@ public static class GameController
 
         int pixelteLoc = GetShaderLocation(PixelateShader, "DownscaleRes");
 
-        float pixelateAmount = 4;
+        float pixelateAmount = 5f;
 
         
 
@@ -139,8 +139,11 @@ public static class GameController
 
         #endregion
 
-        RenderTexture2D texture2D = LoadRenderTexture(GetRenderWidth(), GetRenderHeight());
+        
 
+        RenderTexture2D texture2D = LoadRenderTexture(1920, 1020);
+
+        SetTextureFilter(texture2D.Texture, TextureFilter.Bilinear);
 
         #region GameLoop
 
@@ -149,22 +152,6 @@ public static class GameController
             CurrentFrame ++;
 
             Update.Invoke();
-
-
-            #region Transform WindowSize
-
-            float scale = MathF.Min((float)GetScreenWidth()/WindowW, (float)GetScreenHeight()/WindowH);
-
-            Vector2 mouse = GetMousePosition();
-            Vector2 virtualMouse = new()
-            {
-                X = (mouse.X - (GetScreenWidth() - (GetScreenHeight()*scale))*0.5f)/scale,
-                Y = (mouse.Y - (GetScreenHeight() - (GetScreenHeight()*scale))*0.5f)/scale,
-            };
-
-            virtualMouse = Raymath.Vector2Clamp(virtualMouse, Vector2.Zero, new Vector2(GetScreenHeight(), GetScreenHeight()));
-            
-            #endregion
 
 
             // Update Camera
@@ -176,10 +163,7 @@ public static class GameController
                 SpriteManager.LoadAllTextures();
             }
 
-            if(firstLoad)
-            {
-                SetShaderValue(PixelateShader, pixelteLoc, new Vector2(GetScreenWidth(), GetScreenHeight()) / pixelateAmount, ShaderUniformDataType.Vec2);
-            }
+            SetShaderValue(PixelateShader, pixelteLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height) / pixelateAmount, ShaderUniformDataType.Vec2);
 
             // Load Shader Variables
             if(LightsManager.IsDirty() || firstLoad)
@@ -195,7 +179,7 @@ public static class GameController
 
                 SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
                 
-                SetShaderValue(DefaultShader, rLoc, new float[2] { GetScreenWidth(), GetScreenHeight()}, ShaderUniformDataType.Vec2);
+                SetShaderValue(DefaultShader, rLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height), ShaderUniformDataType.Vec2);
                 SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.Cam.Target, ShaderUniformDataType.Vec2);
                 SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.Cam.Zoom, ShaderUniformDataType.Float);
 
@@ -283,20 +267,22 @@ public static class GameController
                 }
                 
             EndShaderMode();
-            EndMode2D();
-            
+            EndMode2D();            
             EndTextureMode();
-            
-            Console.WriteLine(texture2D.Texture.Width + " -- " + texture2D.Texture.Height);
+
 
             BeginDrawing();
 
+            BeginShaderMode(PixelateShader);
                 ClearBackground(Color.Black);
 
-            
-                DrawTexturePro(texture2D.Texture, new Rectangle(0, 0, texture2D.Texture.Width, texture2D.Texture.Height), new Rectangle(0, 0, GetScreenWidth(), GetScreenHeight()), Vector2.Zero, 0, Color.White);
+                var size = new Vector2(texture2D.Texture.Width, texture2D.Texture.Height);
 
-            
+                var screenSize = Raymath.Vector2Normalize(size) * Raymath.Vector2Length(new Vector2(GetScreenWidth(), GetScreenHeight()));
+
+                DrawTexturePro(texture2D.Texture, new Rectangle(0, 0, size), new Rectangle((new Vector2(GetScreenWidth(), GetScreenHeight()) - screenSize ) / 2, screenSize), Vector2.Zero, 0, Color.White);
+
+            EndShaderMode();
             
 
             // Draw all the Debug Windows
@@ -328,6 +314,7 @@ public static class GameController
         #endif
 
         SpriteManager.UnloadAllImages();
+
 
         CloseWindow();
     }
