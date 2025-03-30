@@ -12,6 +12,7 @@ using ImGuiNET;
 using Patoframework.Inspector;
 using PatoframeWork.Rendering;
 using BulletSharp;
+using System.Reflection;
 namespace PatoframeWork;
 
 /// <summary>
@@ -22,9 +23,9 @@ public static class GameController
 {
 
     // Save Location and Filename -- They get initialized after selecting a path
-    public static string? SaveLocation = "./";
-    public static string? fileSaveName = "";
 
+    public static string ProjectLoc { get; } = (Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "");
+    public static string SaveLocation = ProjectLoc;
 
     // Properties for the save system
     // NOTE: Json saves get too heavy, set Formatting to Formatting.None
@@ -82,8 +83,12 @@ public static class GameController
 
         Update = new(UpdateGame);
 
+
+        SetupFolders();
+
         // Init Default Texture folder
-        SpriteManager.LoadTextureFolder("Resources/Images");
+        SpriteManager.LoadTextureFolder("/Resources/Images");
+
 
 
 
@@ -143,7 +148,7 @@ public static class GameController
 
         RenderTexture2D texture2D = LoadRenderTexture(1920, 1020);
 
-        SetTextureFilter(texture2D.Texture, TextureFilter.Bilinear);
+        
 
         #region GameLoop
 
@@ -172,10 +177,8 @@ public static class GameController
 
                 var LightColors = LightsManager.GetNearestLightsColors();
 
-                Console.WriteLine(LightPoses.Length);
             
-                SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);
-                //SetShaderValueV(DefaultShader, lLoc, LightPoses, ShaderUniformDataType.Vec3, 4);
+                SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);    
 
                 SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
                 
@@ -242,7 +245,7 @@ public static class GameController
 
                             if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
                             {
-                                DrawTexturePro(loadedTexture, sprite, new Rectangle(toRender[i].Owner.GlobalPosition, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size), (toRender[i].Owner.Parent != 0 ? toRender[i].Owner.GlobalPosition + FindEntity(toRender[i].Owner.Parent).GlobalPosition : Vector2.Zero) + (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size) /  2, toRender[i].zRot, toRender[i].Color);
+                                DrawTexturePro(loadedTexture, sprite, new Rectangle(toRender[i].Owner.GlobalPosition, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10), (toRender[i].Owner.Parent != 0 ? toRender[i].Owner.GlobalPosition + FindEntity(toRender[i].Owner.Parent).GlobalPosition : Vector2.Zero) + (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10) /  2, toRender[i].zRot, toRender[i].Color);
                             }
                             else
                             ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
@@ -335,7 +338,7 @@ public static class GameController
     public static void LoadScene()
     {
         
-        var data = File.ReadAllText(SaveLocation + fileSaveName);
+        var data = File.ReadAllText(SaveLocation);
 
         // Clean up current entity list
         foreach (var entity in Entities.ToList())
@@ -358,11 +361,13 @@ public static class GameController
     /// <summary>
     /// Saves all the Entities in a .json file.
     /// </summary>
-    public static void SaveScene()
+    public static void SaveScene(string fileName)
     {   
         string jsonStringGen = JsonConvert.SerializeObject(Entities, settings);
 
-        File.WriteAllText(SaveLocation + fileSaveName, jsonStringGen);
+        SaveLocation = Path.EndsInDirectorySeparator(SaveLocation) ? SaveLocation : SaveLocation + "/";
+
+        File.WriteAllText(SaveLocation + fileName + ".json", jsonStringGen);
     }
 
     #endregion
@@ -451,6 +456,21 @@ public static class GameController
     {
         return [.. Renderers];
     }
+
+    #endregion
+
+    #region File management
+
+    static void SetupFolders()
+    {
+
+        if(!Directory.Exists(ProjectLoc + "/Resources"))
+            Directory.CreateDirectory(ProjectLoc + "/Resources");
+    
+        if(!Directory.Exists(ProjectLoc + "/Resources/Images"))
+            Directory.CreateDirectory(ProjectLoc + "/Resources/Images");
+    } 
+
 
     #endregion
 }

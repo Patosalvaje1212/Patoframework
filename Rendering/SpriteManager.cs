@@ -35,34 +35,31 @@ public static class SpriteManager
 
 
 
-        var Files = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath));
+        var Files = Directory.GetFiles(GameController.ProjectLoc + folderPath);
         
-        Console.WriteLine("Reading dir: " + Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath) + " -- " + Files.Length);
+        Console.WriteLine($"Reading dir: {GameController.ProjectLoc + folderPath} . Detected {Files.Length} files");
 
         if(Files.Length > 0)
         {
             foreach (var file in Files.Where(res => Path.GetExtension(res) == ".pfdata"))
             {
-                var textLine =  File.ReadAllLines(Path.GetFullPath(file)); 
+                var textLine =  File.ReadAllLines(file);
                 
                 foreach (var line in textLine)
                 {
                     string[] contents = line.Split(" ", 4);
 
-                    string imagePath = contents[0];
-                    
-                    Console.WriteLine(imagePath);
+                    string imagePath = GameController.ProjectLoc + contents[0];
 
                     var Texture = Raylib.LoadImage(imagePath);
 
-                    string normalPath = contents[1];
-                    
-                    Console.WriteLine(normalPath);
+                    string normalPath = GameController.ProjectLoc + contents[1];
 
+                    Console.Write($"Image at: {contents[0]}, with attached Normal Image at: {contents[1]} --");
 
                     Image Normal;
 
-                    bool hasNormal = !String.IsNullOrWhiteSpace(normalPath) && normalPath != "null";
+                    bool hasNormal = !String.IsNullOrWhiteSpace(normalPath) && contents[1] != "null";
                     
                     if(hasNormal)
                         Normal = Raylib.LoadImage(normalPath);
@@ -72,8 +69,6 @@ public static class SpriteManager
                     string[] tSize = contents[2].Split(".", 2);
                     int tSizeX = Int32.Parse(tSize[0]);
                     int tSizeY = Int32.Parse(tSize[1]);
-
-                    Console.WriteLine(tSize);
 
 
                     string[] sSize = contents[3].Split(".", 2);
@@ -118,8 +113,6 @@ public static class SpriteManager
                     }
 
                     newT.hasNormal = hasNormal;
-
-                    //Console.WriteLine($"{LoadedImages[0]} images loaded");
 
 
                 }
@@ -203,7 +196,7 @@ public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Re
             if(Lowest == List[i]) Lowest ++;
         }
 
-        Console.WriteLine($"Returned ID: {Lowest}");
+        Console.WriteLine($"With ID: {Lowest}");
 
 
         return Lowest;

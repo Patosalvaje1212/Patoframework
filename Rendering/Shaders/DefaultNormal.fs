@@ -40,7 +40,7 @@ void main()
 	for(int i = 0; i < LightCount; i++)
 	{
 		//The delta position of light
-		vec3 LightDir = vec3((LightPos[i].rg) - (gl_FragCoord.rg / (Resolution.rg)), LightPos[i].b);
+		vec3 LightDir = vec3(LightPos[i].rg - (gl_FragCoord.rg /  (Resolution.rg)), LightPos[i].b);
 			
 		//normalize our vectors
 		vec3 L = normalize(LightDir);
@@ -49,7 +49,7 @@ void main()
 		//Then perform "N dot L" to determine our diffuse term
 		vec3 Diffuse = (LightColor[i].rgb * LightColor[i].a) * (max(dot(N, L), 0.0));
 
-		float Attenuation = 1.0 / ( Falloff.x + (Falloff.y*D) + (Falloff.z*D*D) );
+		float Attenuation = 1.0 / ( Falloff.r + (Falloff.g*D) + (Falloff.b*D*D) );
 
 
 		Intensity += Diffuse * Attenuation;

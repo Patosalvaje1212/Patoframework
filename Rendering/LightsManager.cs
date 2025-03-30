@@ -55,7 +55,7 @@ public static class LightsManager
         for (int i = 0; i < nearLights.Length; i++)
         {
             //Pos[i] = new Vector3(.5f, .5f, .5f);
-            Pos[i] = WorldToScreenSpace( new Vector3(nearLights[i].Owner.GlobalPosition.X, nearLights[i].Owner.GlobalPosition.Y, nearLights[i].Zpos));
+            Pos[i] = WorldToScreenSpace( new Vector3(nearLights[i].Owner.GlobalPosition.X, nearLights[i].Owner.GlobalPosition.Y - Raylib.GetScreenHeight(), nearLights[i].Zpos));
         }
 
         return Pos;

@@ -22,8 +22,8 @@ public static class InspectorVisual
 
     static Entity? DEBUG_Selected;
 
-    static string? SaveLocation = "";
-    static string? SaveName = "SaveData 1";
+    static string SaveLocation = GameController.ProjectLoc;
+    static string SaveName = "SaveData 1";
     static bool OpenFileSelector = false;
     static bool SaveFileSelector = false;
 
@@ -47,7 +47,7 @@ public static class InspectorVisual
                     {
                         OpenFileSelector = true;
 
-                        SaveLocation = "./";
+                        SaveLocation = GameController.ProjectLoc;
 
                         if (string.IsNullOrEmpty(SaveLocation))
                         {
@@ -68,9 +68,9 @@ public static class InspectorVisual
 
                 if (ImGui.MenuItem("Save"))
                 {
-                    if (GameController.fileSaveName == "")
+                    if (File.Exists(GameController.SaveLocation))
                     {
-                        SaveLocation = "./";
+                        SaveLocation = GameController.ProjectLoc;
 
                         if (string.IsNullOrEmpty(SaveLocation))
                         {
@@ -81,12 +81,12 @@ public static class InspectorVisual
 
                     }
                     else
-                        GameController.SaveScene();
+                        GameController.SaveScene(SaveName);
                 }
 
                 if (ImGui.MenuItem("Save As"))
                 {
-                    SaveLocation = "./";
+                    SaveLocation = GameController.ProjectLoc;
 
                     if (string.IsNullOrEmpty(SaveLocation))
                     {
@@ -568,7 +568,7 @@ public static class InspectorVisual
                     ImGui.EndPopup();
                 }
 
-                foreach (var ch in REntity.Childs)
+                foreach (var ch in REntity.Childs.ToList())
                 {
                     DrawRecursiveList(GameController.FindEntity(ch));
                 }
@@ -640,51 +640,58 @@ public static class InspectorVisual
 
     #region Draw Selectors
     // Draw File Selector (Choose only folder /// Choose only Json)
-    static bool DrawFileSelector(string? fileType, ref string? DestPath, ref string? FileName)
+    static bool DrawFileSelector(string? fileType, ref string FilePath)
     {
+        
+
         ImGui.BeginChild("FileInspector", new Vector2(-30, -80), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders);
-        if (SaveLocation != null)
-        {
-            List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).OrderBy(res => !Directory.Exists(res))];
+        
+        List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).OrderBy(res => !Directory.Exists(res))];
 
-            if (files.Count > 0)
+        if (files.Count > 0)
+        {            
+            foreach (var file in files)
             {
-                foreach (var file in files)
+                bool isDirectory = Directory.Exists(file);
+
+                if (isDirectory) ImGui.Dummy(Vector2.One * 25);
+                else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
+                ImGui.SameLine();
+
+                if (isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
+                else if (fileType != null && Path.GetExtension(file) == fileType) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
+                else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
+                   
+                
+
+                if (ImGui.Button(Path.GetFileName(file)))
                 {
-                    bool isDirectory = Directory.Exists(file);
 
-                    if (isDirectory) ImGui.Dummy(Vector2.One * 25);
-                    else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
-                    ImGui.SameLine();
+                    
 
-                    if (isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
-                    else if (fileType != null && Path.GetExtension(file) == fileType) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
-                    else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
-
-                    if (ImGui.Button(Path.GetFileName(file)))
+                    if (!isDirectory && fileType != null)
                     {
+                        FilePath = Path.GetFullPath(file);
 
-                        DestPath = Path.GetFullPath(file);
+                        ImGui.PopStyleColor();
+                        ImGui.EndChild();
 
-                        if (!isDirectory && fileType != null)
-                        {
-                            FileName = Path.GetFileName(file);
-
-                            ImGui.EndChild();
-                            ImGui.PopStyleColor();
-
-                            return true;
-                        }
-
-                        SaveLocation = DestPath;
+                        return true;
+                    }else 
+                    if(isDirectory)
+                    {
+                        FilePath = Path.GetFullPath(file);
                     }
-                    ImGui.PopStyleColor();
 
+
+
+                    SaveLocation = FilePath;
                 }
+                ImGui.PopStyleColor();
+
             }
         }
-        else
-            throw new FileLoadException("Error while loading the Folder data. Please check the Engine has access to the requested folder");
+        
 
         ImGui.EndChild();
 
@@ -698,8 +705,7 @@ public static class InspectorVisual
             ImGui.BeginGroup();
             if (ImGui.Button("Select folder"))
             {
-                DestPath = Path.GetDirectoryName(SaveLocation) + "/";
-                FileName = SaveName + fileType;
+                SaveLocation = FilePath;
 
                 ImGui.EndGroup();
 
@@ -708,8 +714,7 @@ public static class InspectorVisual
             ImGui.EndGroup();
         }
 
-        DestPath = null;
-        FileName = null;
+        FilePath = "";
 
         return false;
     }
@@ -761,12 +766,10 @@ public static class InspectorVisual
 
             ImGui.BeginGroup();
 
-            string? filePath = null;
-            string? fileName = null;
-            if (DrawFileSelector(".json", ref filePath, ref fileName))
+            string filePath = GameController.ProjectLoc;
+            if (DrawFileSelector(".json", ref filePath))
             {
                 GameController.SaveLocation = filePath;
-                GameController.fileSaveName = fileName;
                 OpenFileSelector = false;
 
                 GameController.LoadScene();
@@ -792,10 +795,7 @@ public static class InspectorVisual
 
             if (ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
             {
-                if(SaveLocation == null)
-                {
-                    SaveLocation = "./";
-                }
+                SaveLocation ??= "./";
 
                 if (Directory.GetParent(SaveLocation) is DirectoryInfo info)
                 {
@@ -812,7 +812,7 @@ public static class InspectorVisual
             ImGui.SameLine();
             if (ImGui.InputText("File Name", ref SaveName, 40))
             {
-
+                if(SaveName == "") SaveName = "Data";
             }
 
             ImGui.Dummy(Vector2.One * 30);
@@ -822,15 +822,13 @@ public static class InspectorVisual
 
             ImGui.SeparatorText("Files:");
 
-            string? filePath = null;
-            string? fileName = null;
-            if (DrawFileSelector(null, ref filePath, ref fileName))
+            string filePath = GameController.ProjectLoc;
+            if (DrawFileSelector(null, ref filePath))
             {
                 GameController.SaveLocation = filePath;
-                GameController.fileSaveName = fileName;
                 SaveFileSelector = false;
 
-                GameController.SaveScene();
+                GameController.SaveScene(SaveName);
             }
 
             ImGui.EndPopup();
