@@ -57,7 +57,7 @@ void main()
 
 
 	//the calculation which brings it all together
-	vec3 FinalColor = DiffuseColor.rgb * (round(Intensity * lightResolution) / lightResolution);
+	vec3 FinalColor = clamp( DiffuseColor.rgb * (round(Intensity * lightResolution) / lightResolution), 0.0, 1.0);
 	
 	gl_FragColor = (fragColor * vec4(FinalColor, DiffuseColor.a));
 

@@ -264,7 +264,7 @@ public class Entity
                 Parent = newParent.Id;
 
             } else
-            ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
+            LogManager.LogError("Cannot set a child of an Entity as its Parent");
             
         } else
         { 
@@ -292,7 +292,7 @@ public class Entity
                 Parent = newParentID;
 
             } else
-            ErrorManager.LogError("Cannot set a child of an Entity as its Parent");
+            LogManager.LogError("Cannot set a child of an Entity as its Parent");
             
         } else
         {

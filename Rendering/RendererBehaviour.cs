@@ -1,3 +1,4 @@
+using PatoframeWork.Inspector;
 using Raylib_cs;
 
 namespace PatoframeWork.Rendering;
@@ -33,7 +34,8 @@ public class RendererBehaviour : Behaviour
     /// <summary>
     /// If <c>RenderType</c> is set to <c>Image</c>, the Image's ID to show.
     /// </summary>
-    public ulong ImageID;
+    [InspectorReceiveDrop("TextureDragData")]
+    public string ImageID = "";
     /// <summary>
     /// If <c>RenderType</c> is set to <c>Image</c>, the Sprite's ID from the target image to show.
     /// </summary>

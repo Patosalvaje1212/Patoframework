@@ -12,7 +12,7 @@ namespace PatoframeWork.Rendering;
 /// </summary>
 public static class SpriteManager
 {
-    public static Dictionary<ulong, ImageData> LoadedImages { get; private set; } = [];
+    public static Dictionary<string, ImageData> LoadedImages { get; private set; } = [];
 
     public static bool IsDirty{ get; private set; } = false;
 
@@ -23,103 +23,69 @@ public static class SpriteManager
 
 
     /// <summary>
-    /// Searches a .pfdata file in <paramref name="folderPath"/>, and loads its data.
+    /// Opens the .pfdata at <paramref name="dataFilePath"/>, and loads its images.
     /// </summary>
     
-    public static void LoadTextureFolder(string folderPath, bool cleanUp = true)
+    public static ImageData[] LoadTexturesFromDataFile(string dataFilePath, bool cleanUp)
     {
+        List<ImageData> returnImages = [];
 
-        if(cleanUp && LoadedImages.Count > 0) UnloadAllImages();
+
+        if(cleanUp && LoadedImages.Count > 0) RemoveAllTextures();
 
         IsDirty = true;
 
+        var data = File.ReadLines(dataFilePath);
 
-
-        var Files = Directory.GetFiles(GameController.ProjectLoc + folderPath);
-        
-        Console.WriteLine($"Reading dir: {GameController.ProjectLoc + folderPath} . Detected {Files.Length} files");
-
-        if(Files.Length > 0)
+        if(data.Any())
+        foreach (var line in data)
         {
-            foreach (var file in Files.Where(res => Path.GetExtension(res) == ".pfdata"))
+            var split = line.Split(' ', 4);
+
+            var globalPath1 = GameController.ProjectLoc + split[1];
+            var globalPath2 = GameController.ProjectLoc + split[2];
+
+
+            Console.WriteLine("Reading line: " + line);
+            Console.Write(File.Exists(globalPath1));
+            Console.Write(split[2] == "null");
+            Console.WriteLine(File.Exists(globalPath2));
+
+
+            if(File.Exists(globalPath1) && (split[2] == "null" || File.Exists(globalPath2)))
             {
-                var textLine =  File.ReadAllLines(file);
-                
-                foreach (var line in textLine)
+                string[] sSize = ["0", "0"];
+
+                if(split.Length == 4) sSize = split[3].Split('.', 2);
+
+                ImageData newImg = new(globalPath1, split[2] == "null" ? "null" : globalPath2, split[0], int.Parse(sSize[0]), int.Parse(sSize[1]));
+
+                if(split.Length == 4)
+                Console.WriteLine($"Loaded image at {split[1]}, with id {split[0]}, normal data at {split[2]}, and defined size at {split[3]}");
+                else
+                Console.WriteLine($"Loaded image at {split[1]}, with id {split[0]} abd normal data at {split[2]}");
+
+
+                returnImages.Add(newImg);
+            }
+            else
+            {
+                if(!File.Exists(globalPath1))
                 {
-                    string[] contents = line.Split(" ", 4);
-
-                    string imagePath = GameController.ProjectLoc + contents[0];
-
-                    var Texture = Raylib.LoadImage(imagePath);
-
-                    string normalPath = GameController.ProjectLoc + contents[1];
-
-                    Console.Write($"Image at: {contents[0]}, with attached Normal Image at: {contents[1]} --");
-
-                    Image Normal;
-
-                    bool hasNormal = !String.IsNullOrWhiteSpace(normalPath) && contents[1] != "null";
-                    
-                    if(hasNormal)
-                        Normal = Raylib.LoadImage(normalPath);
-                    else
-                        Normal = DefaultImg;
-
-                    string[] tSize = contents[2].Split(".", 2);
-                    int tSizeX = Int32.Parse(tSize[0]);
-                    int tSizeY = Int32.Parse(tSize[1]);
-
-
-                    string[] sSize = contents[3].Split(".", 2);
-                    int sSizeX = Int32.Parse(sSize[0]);
-                    int sSizeY = Int32.Parse(sSize[1]);
-
-                    var RectList = new Dictionary<ulong, Rectangle>();
-                    
-                    int i = 0, v = 0;
-                    ulong count = 0;
-
-                    while((i + 1) * sSizeX <= tSizeX && (v + 1) * sSizeY <= tSizeY)
-                    {
-                        RectList.Add(count, new Rectangle( i * sSizeX,  v * sSizeY, sSizeX, sSizeY));
-
-                        i ++;
-
-                        if((i + 1) * sSizeX > tSizeX )
-                        {
-                            i = 0;
-                            v ++;
-                        }
-
-                        count ++;
-                    }
-                    
-
-                    Console.WriteLine($"Found {count} rectangles");
-
-
-
-                    var newT = new ImageData(Texture, tSizeX, tSizeY, RectList);
-        
-                    LoadedImages.Add(ImageData.GetLowestID([.. LoadedImages.Keys]), newT);
-
-                    if(hasNormal)
-                    {
-                        newT.imageNormal = Normal;
-                    } else
-                    {
-                        newT.imageNormal = null;
-                    }
-
-                    newT.hasNormal = hasNormal;
-
-
+                    LogManager.LogError($"Did not find suitable image at {globalPath1}.");
+                } else
+                {
+                    LogManager.LogError($"Did not find suitable normal map at {globalPath2}. If you did not intend to load a custom normal map for this image, please write the word 'null' at the 3rd argument, in the target .pfdata file ");
                 }
             }
+
+
         }
         else
-        ErrorManager.LogError("Not found any files when tried to load the Texture Folder");
+        LogManager.LogError("Not found any files when tried to load the Data file at: " + dataFilePath);
+
+
+        return [.. returnImages];
     }
 
 
@@ -134,72 +100,213 @@ public static class SpriteManager
 
         foreach (var image in LoadedImages.Values)
         {
-            if(image.loadedTexture != null)
-            Raylib.LoadTextureFromImage(image.image);
+            image.loadedTexture = Raylib.LoadTexture(image.texturePath);
 
-            if(image.loadedNormal != null && image.imageNormal is Image normalToLoad)
+            if(image.hasNormal)
             {
-                if(image.hasNormal) image.loadedNormal = Raylib.LoadTextureFromImage(normalToLoad);
-                else image.loadedNormal = DefaultText;
+                if(image.hasNormal) image.loadedNormal = Raylib.LoadTexture(image.textureNormalPath);
             }
+            else image.loadedNormal = (Texture2D)DefaultText;
         }
     }
 
 
-    public static void UnloadImage(ulong key)
+    // Be VERY carefull with unloadData bool, can cause memory leaks if you loose reference of the loaded images/Textures inside the ImageData
+    public static void RemoveTexture(string key, bool unloadData = true)
     {
-        Raylib.UnloadImage(LoadedImages[key].image);
+        if(unloadData)
+        {
+            
+            if(LoadedImages[key].loadedTexture is Texture2D loadedTexture)
+            Raylib.UnloadTexture(loadedTexture);
+        }
 
-        if(LoadedImages[key].loadedTexture is Texture2D loadedTexture)
-        Raylib.UnloadTexture(loadedTexture);
-
-        if(LoadedImages[key].imageNormal != null && LoadedImages[key].loadedNormal is Texture2D loadedNormal)
-        Raylib.UnloadTexture(loadedNormal);
-
+        if(LoadedImages[key].hasNormal)        
+        {
+            Raylib.UnloadTexture(LoadedImages[key].loadedNormal);
+        }
+        
         LoadedImages.Remove(key);
     }
 
 
-    public static void UnloadAllImages()
+    public static void RemoveAllTextures()
     {
         foreach (var sprite in LoadedImages.ToList())
         {
-            UnloadImage(sprite.Key);
+            RemoveTexture(sprite.Key);
         }
+    }
+
+    public static void SaveTextureDataFile(Dictionary<string, ImageData> TextureList, string saveTextPath)
+    {
+        
+        if(saveTextPath != "" && File.Exists(saveTextPath))
+        {
+            var wholeText = new StringBuilder();
+
+            foreach (var image in TextureList)
+            {
+                wholeText.Append(image.Key);
+                wholeText.Append(' ');
+                
+                var relPath = image.Value.texturePath.Remove(0, GameController.ProjectLoc.Length);
+                wholeText.Append(relPath);
+                wholeText.Append(' ');
+
+                if(image.Value.hasNormal)
+                {
+                    var relNormPath = image.Value.textureNormalPath.Remove(0, GameController.ProjectLoc.Length);
+                    wholeText.Append(relNormPath);
+                } else
+                {
+                    wholeText.Append("null");
+                }
+
+                if(image.Value.SpriteSizeX != image.Value.TextSizeX || image.Value.SpriteSizeY != image.Value.TextSizeY)
+                {
+                    wholeText.Append(' ');
+
+                    wholeText.Append(image.Value.SpriteSizeX);
+                    wholeText.Append('.');
+                    wholeText.Append(image.Value.SpriteSizeY);
+                }
+
+
+                wholeText.AppendLine();
+            }
+
+            File.WriteAllText(saveTextPath, wholeText.ToString());
+            
+            
+            LogManager.LogSuccess("Wrote all the Image data to " + saveTextPath);
+        } else
+        LogManager.LogError("Could not find file to write into");
     }
 }
 
 
-public class ImageData(Image newImage, int SizeX, int SizeY,Dictionary<ulong, Rectangle> SpriteRectangles)
+public class ImageData
 {
-    public Image image = newImage;
+    public string ID;
 
-    public Texture2D? loadedTexture = null;
+    public string texturePath;
+    public Texture2D loadedTexture;
 
-    public Image? imageNormal = null;
+    public string textureNormalPath;
 
-    public Texture2D? loadedNormal = null;
+    public Texture2D loadedNormal;
 
-    public bool hasNormal = true;
+    public bool hasNormal = false;
 
-    public int TextSizeX = SizeX, TextSizeY = SizeY;
-    public Dictionary<ulong, Rectangle> SpriteRects = SpriteRectangles; 
+    public int TextSizeX, TextSizeY;
+    public int SpriteSizeX, SpriteSizeY;
+    public Dictionary<ulong, Rectangle> SpriteRects;
 
-    public static ulong GetLowestID(List<ulong> list)
+    public ImageData(string path, string normalPath = "null", string id = "null", int spriteSizeX = 0, int spriteSizeY = 0)
+    {
+        texturePath = path;
+        
+        
+        if(normalPath != "null")
+        {
+            hasNormal = true;
+            textureNormalPath = normalPath;  
+        } 
+        else
+        {
+            hasNormal = false;
+            textureNormalPath = "";
+        }        
+        if(SpriteManager.LoadedImages.ContainsKey(id) || id == "null")
+        {
+            if(id != "null") 
+            {
+                ID = GetNewID([.. SpriteManager.LoadedImages.Keys], id); 
+            
+                LogManager.LogError($"Trying to load a image with an already existing ID ({id}). Changing new Image ID to: {ID}");
+            } else
+            {
+                ID = GetNewID([.. SpriteManager.LoadedImages.Keys]);
+            }
+
+        } else
+        {
+            ID = id;
+        }
+
+        SpriteManager.LoadedImages.Add(ID, this);
+
+        
+
+        loadedTexture = Raylib.LoadTexture(texturePath);
+        if(hasNormal) loadedNormal = Raylib.LoadTexture(normalPath);
+
+        TextSizeX = loadedTexture.Width;
+        TextSizeY = loadedTexture.Height;
+
+        if(spriteSizeX != 0 && spriteSizeY != 0)
+        {
+            SpriteSizeX = spriteSizeX;
+            SpriteSizeY = spriteSizeY;
+        } else
+        {
+            SpriteSizeX = TextSizeX;
+            SpriteSizeY = TextSizeY;
+        }
+        
+
+        LoadRectangles();
+    }
+
+
+
+
+
+    public string GetNewID(List<string> list, string initID = "")
     {
         ulong Lowest = 0;
 
-        List<ulong> List = [.. list.Order()];
-
-        for (int i = 0; i < List.Count; i++)
+        for (int i = 0; i < list.Count; i++)
         {
-            if(Lowest == List[i]) Lowest ++;
+            if( list.Contains(initID + Lowest.ToString())) Lowest ++;
         }
 
-        Console.WriteLine($"With ID: {Lowest}");
+        Console.WriteLine($"Assigned ID {Lowest} to ImageData with path reference: {texturePath}");
 
 
-        return Lowest;
+        return initID + Lowest.ToString();
 
+    }
+
+    public ulong LoadRectangles()
+    {
+
+        var RectList = new Dictionary<ulong, Rectangle>();
+        
+        int i = 0, v = 0;
+        ulong count = 0;
+
+        while((i + 1) * SpriteSizeX <= TextSizeX && (v + 1) * SpriteSizeY <= TextSizeY)
+        {
+            RectList.Add(count, new Rectangle( i * SpriteSizeX,  v * SpriteSizeY, SpriteSizeX, SpriteSizeY));
+
+            i ++;
+
+            if((i + 1) * SpriteSizeX > TextSizeX )
+            {
+                i = 0;
+                v ++;
+            }
+
+            count ++;
+        }
+
+
+        Console.WriteLine($"Found {count} rectangles");
+
+        SpriteRects = RectList;
+
+        return count;
     }
 }

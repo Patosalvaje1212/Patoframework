@@ -7,11 +7,13 @@ using PatoframeWork.Rendering;
 
 using ImGuiNET;
 using Raylib_cs;
-using System.Diagnostics;
 using System.Collections;
 using PatoframeWork.Inspector;
+using rlImGui_cs;
+using System.Text;
 
 namespace Patoframework.Inspector;
+using static ImGui;
 
 public static class InspectorVisual
 {
@@ -26,27 +28,34 @@ public static class InspectorVisual
     static string SaveName = "SaveData 1";
     static bool OpenFileSelector = false;
     static bool SaveFileSelector = false;
+    static bool ShowFileImporter = false;
 
+    //Sprite Manager imports
+    static string saveTextPath = "";
+    static Dictionary<string, ImageData> DroppedImages = [];
 
+    static Vector2 test = Vector2.Zero;
+
+    static string searchEnding = "";
+    static int searchMode = 0;
     public static void ImGUIBeh()
     {
         
-        LoadPopus();
-        ImGui.ShowDemoWindow();
+        LoadPopups();
+        ShowDemoWindow();
 
         // Draw Main Menu
-        if (ImGui.BeginMainMenuBar())
+        if (BeginMainMenuBar())
         {
-            if (ImGui.BeginMenu("File"))
+            // FILE
+
+            if (BeginMenu("File"))
             {
-
-                if (ImGui.MenuItem("New")) { }
-                if (ImGui.MenuItem("Open"))
+                if (MenuItem("New")) { }
+                if (MenuItem("Open"))
                 {
-                    if (!ImGui.IsPopupOpen("Open File"))
+                    if (!IsPopupOpen("Open File"))
                     {
-                        OpenFileSelector = true;
-
                         SaveLocation = GameController.ProjectLoc;
 
                         if (string.IsNullOrEmpty(SaveLocation))
@@ -54,19 +63,23 @@ public static class InspectorVisual
                             throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                         }
 
+                        searchEnding = ".json";
+                        searchMode = 0;
+                        
+                        OpenFileSelector = true;
                     }
                 }
-                if (ImGui.BeginMenu("Open Recent"))
+                if (BeginMenu("Open Recent"))
                 {
 
                     // TODO
 
-                    ImGui.EndMenu();
+                    EndMenu();
                 }
 
-                ImGui.Separator();
+                Separator();
 
-                if (ImGui.MenuItem("Save"))
+                if (MenuItem("Save"))
                 {
                     if (File.Exists(GameController.SaveLocation))
                     {
@@ -77,14 +90,20 @@ public static class InspectorVisual
                             throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                         }
 
+                        searchEnding = ".json";
+                        searchMode = 0;
+
                         SaveFileSelector = true;
 
                     }
                     else
+                    {
+                        
                         GameController.SaveScene(SaveName);
+                    }
                 }
 
-                if (ImGui.MenuItem("Save As"))
+                if (MenuItem("Save As"))
                 {
                     SaveLocation = GameController.ProjectLoc;
 
@@ -92,77 +111,144 @@ public static class InspectorVisual
                     {
                         throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
                     }
+
+                    searchEnding = ".json";
+                    searchMode = 0;
+
                     SaveFileSelector = true;
                 }
 
-                ImGui.EndMenu();
+                EndMenu();
             }
 
+            // TOOL
 
-
-            if (ImGui.MenuItem("Tool"))
-            { }
-
-            if (ImGui.BeginMenu("View"))
+            if (BeginMenu("Tool"))
             {
-                ImGui.BeginGroup();
+                if (BeginMenu("Texture Utilities"))
+                {
+                    if(MenuItem("Open Sprite Importer"))
+                    {
+                        ShowFileImporter = true;
+                        if(!Path.Exists(GameController.ProjectLoc + "/Resources/Images/ImageData.pfdata"))
+                        {
+                            File.Create(GameController.ProjectLoc + "/Resources/Images/ImageData.pfdata");
+                        }
+                    }
+
+                    Separator();
+
+                    if(MenuItem("Load Textures from file"))
+                    {
+                        searchMode = 1;
+                        searchEnding = ".pfdata";
+
+                        SaveLocation = GameController.ProjectLoc;
+
+                        if (string.IsNullOrEmpty(SaveLocation))
+                        {
+                            throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
+                        }
+
+                        OpenFileSelector = true;
+                    }
 
 
-                if (ImGui.Checkbox("Toggle Dark Mode", ref DEBUG_ColorStyle))
+                    if(MenuItem("Save Textures to file"))
+                    {
+                        searchMode = 1;
+                        searchEnding = ".pfdata";
+
+                        SaveLocation = GameController.ProjectLoc;
+
+                        if (string.IsNullOrEmpty(SaveLocation))
+                        {
+                            throw new FormatException("Could not find a viable path to open the file explorer. Please reset the path to an existing path in the .json save file");
+                        }
+
+                        SaveFileSelector = true;
+                    }
+
+                    Separator();
+
+                    if(MenuItem("Unload all textures"))
+                    {
+                        SpriteManager.RemoveAllTextures();
+                    }
+
+                    EndMenu();
+                }
+
+                EndMenu();
+            }
+
+            // VIEW / MISC
+
+            if (BeginMenu("View"))
+            {
+                BeginGroup();
+
+
+                if (Checkbox("Toggle Dark Mode", ref DEBUG_ColorStyle))
                 {
 
                     if (DEBUG_ColorStyle)
                     {
-                        ImGui.StyleColorsLight();
+                        StyleColorsLight();
                     }
                     else
                     {
-                        ImGui.StyleColorsDark();
+                        StyleColorsDark();
                     }
                 }
 
 
-                ImGui.EndGroup();
+                EndGroup();
+                Separator();
 
-                if (ImGui.MenuItem("Reset Camera"))
+                if (MenuItem("Reset Camera"))
                 {
                     CameraManager.I.ResetCamera();
                 }
 
-                ImGui.EndMenu();
+                EndMenu();
             }
 
-            ImGui.EndMainMenuBar();
+            EndMainMenuBar();
 
         }
 
 
-        if (OpenFileSelector) ImGui.OpenPopup("Open File");
+        if (OpenFileSelector) OpenPopup("Open File");
 
-        if (SaveFileSelector) ImGui.OpenPopup("Save File");
+        if (SaveFileSelector) OpenPopup("Save File");
 
 
         DrawEntityInspector();
         
-
-        ImGui.Begin("Entity Info");
+        SetNextWindowSize(Vector2.One * 300, ImGuiCond.Once);
+        SetNextWindowPos(Vector2.One * 100, ImGuiCond.Once);
+        
+        Begin("Entity Info");
 
         if (DEBUG_Selected != null)
         {
             DrawEntityInfo(DEBUG_Selected);
 
-            ImGui.SeparatorText("");
+            SeparatorText("");
 
             DrawBehaviourSelector();
 
             
 
         }
+        End();
 
-        ImGui.End();
-    
         
+        
+        if(ShowFileImporter) DrawFileImporter();
 
+        DrawLoadedImageList();
         
     }
 
@@ -171,17 +257,17 @@ public static class InspectorVisual
     // Draw Properties Inspector
     static void DrawEntityInfo(Entity entity)
     {
-        ImGui.Text("Entity Name");
+        Text("Entity Name");
         if (entity.Active)
         {
-            if (ImGui.InputText("###EntityName", ref entity.Name, 50))
+            if (InputText("###EntityName", ref entity.Name, 50))
             {
                 if (entity.Name == "") entity.Name = " ";
             }
         }
-        else ImGui.TextDisabled(entity.Name);
+        else TextDisabled(entity.Name);
 
-        ImGui.Dummy(Vector2.One * 15);
+        Dummy(Vector2.One * 15);
 
         PropertyInfo[] propertyInfos = typeof(Entity).GetProperties();
         FieldInfo[] fieldInfos = typeof(Entity).GetFields();
@@ -190,19 +276,19 @@ public static class InspectorVisual
 
         if (entity.Behaviours.Count > 0)
         {
-            ImGui.Dummy(Vector2.One * 20);
-            ImGui.SeparatorText("Properties");
+            Dummy(Vector2.One * 20);
+            SeparatorText("Properties");
 
             int behC = 0;
             foreach (var beh in entity.Behaviours.ToList())
             {
-                //ImGui.TextColored(new Vector4(Color.Gold.R, Color.Gold.G, Color.Gold.B, Color.Gold.A) / 255, beh.GetType().Name);
+                //TextColored(new Vector4(Color.Gold.R, Color.Gold.G, Color.Gold.B, Color.Gold.A) / 255, beh.GetType().Name);
 
-                ImGui.PushStyleColor(ImGuiCol.Text, Raylib.ColorNormalize(Color.Gold));
-                ImGui.Text(beh.GetType().Name);
-                ImGui.PopStyleColor();
+                PushStyleColor(ImGuiCol.Text, Raylib.ColorNormalize(Color.Gold));
+                Text(beh.GetType().Name);
+                PopStyleColor();
 
-                ImGui.PushStyleColor(ImGuiCol.ChildBg, Raylib.ColorNormalize(Color.DarkGray));
+                PushStyleColor(ImGuiCol.ChildBg, Raylib.ColorNormalize(Color.DarkGray));
 
 
 
@@ -211,32 +297,32 @@ public static class InspectorVisual
                 FieldInfo[] behFieldInfos = beh.GetType().GetFields();
 
 
-                ImGui.BeginChild("ContextMenuTXT###" + behC, Vector2.UnitY * (55 * (behPropertyInfos.Length + behPropertyInfos.Length)) - Vector2.UnitX * 40, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
-                ImGui.BeginGroup();
+                BeginChild("ContextMenuTXT###" + behC, Vector2.UnitY * (55 * (behPropertyInfos.Length + behPropertyInfos.Length)) - Vector2.UnitX * 40, ImGuiChildFlags.FrameStyle | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
+                BeginGroup();
 
                 DrawPropertiesAndFields(null, beh, behPropertyInfos, behFieldInfos, behC);
 
-                ImGui.EndGroup();
-                ImGui.EndChild();
+                EndGroup();
+                EndChild();
 
-                ImGui.PopStyleColor();
+                PopStyleColor();
 
-                if (ImGui.BeginPopupContextItem("ContextMenu###" + behC))
+                if (BeginPopupContextItem("ContextMenu###" + behC))
                 {
-                    if (ImGui.MenuItem("Duplicate"))
+                    if (MenuItem("Duplicate"))
                     {
                         beh.CloneBehaviour();
                     }
 
-                    if (ImGui.MenuItem("Delete"))
+                    if (MenuItem("Delete"))
                     {
                         beh.RemoveBehaviour();
                     }
 
-                    ImGui.EndMenu();
+                    EndMenu();
                 }
 
-                ImGui.Separator();
+                Separator();
 
                 behC++;
             }
@@ -246,26 +332,30 @@ public static class InspectorVisual
 
     static void DrawEntityInspector()
     {
-        ImGui.Begin("Entities");
 
-        ImGui.PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.DarkGreen));
-        if (ImGui.SmallButton("Create Entity"))
+        SetNextWindowSize(Vector2.One * 300, ImGuiCond.Once);
+        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitX * 400, ImGuiCond.Once);
+
+        Begin("Entities");
+
+        PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.DarkGreen));
+        if (SmallButton("Create Entity"))
         {
             var t = new Entity("New Entity");
             DEBUG_Selected = t;
 
             t.GlobalPosition = CameraManager.I.Cam.Target;
         }
-        ImGui.PopStyleColor();
+        PopStyleColor();
 
-        ImGui.SeparatorText("Entities -- ");
+        SeparatorText("Entities -- ");
 
         foreach (var entity in GameController.GetAllEntities().Where((res) => res.Parent == 0))
         {
             DrawRecursiveList(entity);
         }
 
-        ImGui.End();
+        End();
 
     }
 
@@ -310,18 +400,18 @@ public static class InspectorVisual
         .Where(type => type.IsSubclassOf(typeof(Behaviour))).ToList();
 
 
-        if (ImGui.BeginCombo("Add Behaviours", "", ImGuiComboFlags.PopupAlignLeft))
+        if (BeginCombo("Add Behaviours", "", ImGuiComboFlags.PopupAlignLeft))
         {
 
             for (int n = 0; n < possibleBehaviours.Count; n++)
             {
-                if (ImGui.Selectable(possibleBehaviours[n].Name, false))
+                if (Selectable(possibleBehaviours[n].Name, false))
                 {
                     DEBUG_Selected?.AddBehaviour(possibleBehaviours[n]);
                 }
             }
 
-            ImGui.EndCombo();
+            EndCombo();
         }
 
     }
@@ -338,15 +428,14 @@ public static class InspectorVisual
         if (property.GetCustomAttributes(typeof(InspectorHideNullAttribute), false).Length > 0
         && res == null) return;
 
-
         if (property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0)
         {
-            ImGui.Text(property.Name);
-            ImGui.SameLine();
+            Text(property.Name);
+            SameLine();
 
             if (res is int intR)
             {
-                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref intR))
+                if (InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref intR))
                 {
                     property.SetValue(entity == null ? beh : entity, intR);
                 }
@@ -354,7 +443,7 @@ public static class InspectorVisual
             }
             else if (res is bool boolR)
             {
-                if (ImGui.Checkbox("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref boolR))
+                if (Checkbox("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref boolR))
                 {
                     property.SetValue(entity == null ? beh : entity, boolR);
                 }
@@ -362,7 +451,7 @@ public static class InspectorVisual
             }
             else if (res is Vector2 v2)
             {
-                if (ImGui.DragFloat2("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref v2))
+                if (DragFloat2("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref v2))
                 {
                     property.SetValue(entity == null ? beh : entity, v2);
                 }
@@ -370,7 +459,7 @@ public static class InspectorVisual
             }
             else if (res is string str)
             {
-                if (ImGui.InputText("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref str, 100))
+                if (InputText("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref str, 100, ImGuiInputTextFlags.EnterReturnsTrue))
                 {
                     property.SetValue(entity == null ? beh : entity, str);
                 }
@@ -379,17 +468,17 @@ public static class InspectorVisual
             else if (res is Enum newEnm)
             {
 
-                if (ImGui.BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
+                if (BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
                 {
                     foreach (var item in Enum.GetValues(newEnm.GetType()))
                     {
-                        if (ImGui.Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
+                        if (Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
                         {
                             property.SetValue(entity == null ? beh : entity, item);
                         }
                     }
 
-                    ImGui.EndCombo();
+                    EndCombo();
                 }
 
             }
@@ -397,7 +486,7 @@ public static class InspectorVisual
             {
                 int newIntC = Convert.ToInt32(newUl);
 
-                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
+                if (InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
                 {
                     if (newIntC < 0) newIntC = 0;
 
@@ -410,16 +499,68 @@ public static class InspectorVisual
             }
             else
             {
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null");
+                SameLine();
+                Text(res?.ToString() ?? "Null");
             }
 
         }
         else
         {
-            ImGui.SameLine();
-            ImGui.Text(res?.ToString() ?? "Null");
+            SameLine();
+            Text(res?.ToString() ?? "Null");
         }
+
+        if(property.GetCustomAttributes(typeof(InspectorReceiveDropAttribute), false).Length > 0 && 
+        property.GetCustomAttributes(typeof(InspectorReceiveDropAttribute), false)[0] is InspectorReceiveDropAttribute insAttrib)
+        {
+            if(BeginDragDropTarget())
+            {
+
+                var data = AcceptDragDropPayload(insAttrib.receiveData);
+
+
+                unsafe
+                {
+                    try
+                    {
+                        if(data.NativePtr != null)
+                        {
+                            MethodInfo? method = typeof(InspectorVisual)?.GetMethod(nameof(AssignPropertiesData))?.MakeGenericMethod(property.PropertyType);
+                            
+                            object?[] parms = [data, property, entity == null ? beh : entity];
+                            method?.Invoke(null, parms);
+                        }
+                    }
+                    catch
+                    {
+                        LogManager.LogError("Could not convert data to " + property.PropertyType.Name);
+                    }
+
+                }
+                
+
+                EndDragDropTarget();
+            }
+        }
+    }
+
+
+    public static unsafe void AssignPropertiesData<T>(ImGuiPayloadPtr data, PropertyInfo property, object? target) where T : class
+    {
+        
+        T dataPtr = ((T*)data.Data.ToPointer())[0];
+
+        property.SetValue(target, dataPtr);
+    
+    }
+
+    public static unsafe void AssignFieldsData<T>(ImGuiPayloadPtr data, FieldInfo property, object? target) where T : class
+    {
+        
+        T dataPtr = ((T*)data.Data.ToPointer())[0];
+
+        property.SetValue(target, dataPtr);
+    
     }
     static void DrawField(FieldInfo property, Entity? entity, Behaviour? beh, int IdNumber, int BehaviourNumber)
     {
@@ -434,11 +575,11 @@ public static class InspectorVisual
 
         if (property.GetCustomAttributes(typeof(InspectorNonEditableAttribute), false).Length <= 0)
         {
-            ImGui.Text(property.Name);
+            Text(property.Name);
 
             if (res is int intR)
             {
-                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref intR))
+                if (InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref intR))
                 {
                     property.SetValue(entity == null ? beh : entity, intR);
                 }
@@ -446,7 +587,7 @@ public static class InspectorVisual
             }
             else if (res is bool boolR)
             {
-                if (ImGui.Checkbox("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref boolR))
+                if (Checkbox("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref boolR))
                 {
                     property.SetValue(entity == null ? beh : entity, boolR);
                 }
@@ -454,7 +595,7 @@ public static class InspectorVisual
             }
             else if (res is Vector2 v2)
             {
-                if (ImGui.DragFloat2("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref v2))
+                if (DragFloat2("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref v2))
                 {
                     property.SetValue(entity == null ? beh : entity, v2);
                 }
@@ -462,7 +603,7 @@ public static class InspectorVisual
             }
             else if (res is string str)
             {
-                if (ImGui.InputText("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref str, 100))
+                if (InputText("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref str, 100, ImGuiInputTextFlags.EnterReturnsTrue))
                 {
                     property.SetValue(entity == null ? beh : entity, str);
                 }
@@ -471,7 +612,7 @@ public static class InspectorVisual
             else if (res is Color col)
             {
                 Vector4 newCol = Raylib.ColorNormalize(col);
-                if (ImGui.ColorEdit4("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newCol))
+                if (ColorEdit4("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newCol))
                 {
                     property.SetValue(entity == null ? beh : entity, Raylib.ColorFromNormalized(newCol));
                 }
@@ -479,7 +620,7 @@ public static class InspectorVisual
             }
             else if (res is float newF)
             {
-                if (ImGui.DragFloat("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newF))
+                if (DragFloat("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newF))
                 {
                     property.SetValue(entity == null ? beh : entity, newF);
                 }
@@ -488,17 +629,17 @@ public static class InspectorVisual
             else if (res is Enum newEnm)
             {
 
-                if (ImGui.BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
+                if (BeginCombo("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), property.GetValue(entity == null ? beh : entity)?.ToString()))
                 {
                     foreach (var item in Enum.GetValues(newEnm.GetType()))
                     {
-                        if (ImGui.Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
+                        if (Selectable(item.ToString(), item == property.GetValue(entity == null ? beh : entity)))
                         {
                             property.SetValue(entity == null ? beh : entity, item);
                         }
                     }
 
-                    ImGui.EndCombo();
+                    EndCombo();
                 }
 
             }
@@ -506,7 +647,7 @@ public static class InspectorVisual
             {
                 int newIntC = Convert.ToInt32(newUl);
 
-                if (ImGui.InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
+                if (InputInt("###" + property.Name + IdNumber.ToString() + BehaviourNumber.ToString(), ref newIntC, 0))
                 {
                     if (newIntC < 0) newIntC = 0;
 
@@ -519,16 +660,50 @@ public static class InspectorVisual
             }
             else
             {
-                ImGui.SameLine();
-                ImGui.Text(res?.ToString() ?? "Null");
+                SameLine();
+                Text(res?.ToString() ?? "Null");
             }
 
         }
         else
         {
-            ImGui.SameLine();
-            ImGui.Text(res?.ToString() ?? "Null");
+            SameLine();
+            Text(res?.ToString() ?? "Null");
         }
+
+        if(property.GetCustomAttributes(typeof(InspectorReceiveDropAttribute), false).Length > 0 && 
+        property.GetCustomAttributes(typeof(InspectorReceiveDropAttribute), false)[0] is InspectorReceiveDropAttribute insAttrib)
+        {
+            if(BeginDragDropTarget())
+            {
+
+                var data = AcceptDragDropPayload(insAttrib.receiveData);
+
+
+                unsafe
+                {
+                    try
+                    {
+                        if(data.NativePtr != null)
+                        {
+                            MethodInfo? method = typeof(InspectorVisual)?.GetMethod(nameof(AssignFieldsData))?.MakeGenericMethod(property.FieldType);;
+                            
+                            object?[] parms = [data, property, entity == null ? beh : entity];
+                            method?.Invoke(null, parms);
+                        }
+                    }
+                    catch
+                    {
+                        LogManager.LogError("Could not convert data to " + property.FieldType.Name);
+                    }
+
+                }
+                
+
+                EndDragDropTarget();
+            }
+        }
+
     }
 
     #endregion
@@ -539,33 +714,33 @@ public static class InspectorVisual
     {
         if (REntity.Childs.Count > 0)
         {
-            if (ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth))
+            if (TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth))
             {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+                if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
                 {
-                    if (ImGui.MenuItem("Duplicate"))
+                    if (MenuItem("Duplicate"))
                     {
                         var ent = REntity.Duplicate();
 
                         DEBUG_Selected = ent;
                     }
 
-                    if (ImGui.MenuItem("Delete"))
+                    if (MenuItem("Delete"))
                     {
                         REntity.Delete();
                         DEBUG_Selected = null;
                     }
 
-                    if (ImGui.MenuItem("Delete -- Chain"))
+                    if (MenuItem("Delete -- Chain"))
                     {
                         REntity.Delete(true, true);
                         DEBUG_Selected = null;
                     }
 
 
-                    ImGui.EndPopup();
+                    EndPopup();
                 }
 
                 foreach (var ch in REntity.Childs.ToList())
@@ -573,66 +748,66 @@ public static class InspectorVisual
                     DrawRecursiveList(GameController.FindEntity(ch));
                 }
 
-                ImGui.TreePop();
+                TreePop();
             }
             else
             {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+                if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
                 {
-                    if (ImGui.MenuItem("Duplicate"))
+                    if (MenuItem("Duplicate"))
                     {
                         REntity.Duplicate();
                     }
 
-                    if (ImGui.MenuItem("Delete"))
+                    if (MenuItem("Delete"))
                     {
                         REntity.Delete();
                     }
 
-                    if (ImGui.MenuItem("Delete -- Chain"))
+                    if (MenuItem("Delete -- Chain"))
                     {
                         REntity.Delete(true, true);
                     }
 
 
-                    ImGui.EndPopup();
+                    EndPopup();
                 }
             }
 
         }
         else
         {
-            if (ImGui.TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.SpanFullWidth))
+            if (TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.SpanFullWidth))
             {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
+                if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (ImGui.BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
                 {
-                    if (ImGui.MenuItem("Duplicate"))
+                    if (MenuItem("Duplicate"))
                     {
                         REntity.Duplicate();
                     }
 
-                    if (ImGui.MenuItem("Delete"))
+                    if (MenuItem("Delete"))
                     {
                         REntity.Delete();
                         DEBUG_Selected = null;
                     }
 
-                    if (ImGui.MenuItem("Delete -- Chain"))
+                    if (MenuItem("Delete -- Chain"))
                     {
                         REntity.Delete(true, true);
                         DEBUG_Selected = null;
                     }
 
 
-                    ImGui.EndPopup();
+                    EndPopup();
                 }
 
 
-                ImGui.TreePop();
+                TreePop();
             }
         }
     }
@@ -642,9 +817,7 @@ public static class InspectorVisual
     // Draw File Selector (Choose only folder /// Choose only Json)
     static bool DrawFileSelector(string? fileType, ref string FilePath)
     {
-        
-
-        ImGui.BeginChild("FileInspector", new Vector2(-30, -80), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders);
+        BeginChild("FileInspector", new Vector2(-30, -80), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.Borders);
         
         List<string> files = [.. Directory.GetFileSystemEntries(SaveLocation).OrderBy(res => !Directory.Exists(res))];
 
@@ -654,99 +827,118 @@ public static class InspectorVisual
             {
                 bool isDirectory = Directory.Exists(file);
 
-                if (isDirectory) ImGui.Dummy(Vector2.One * 25);
-                else ImGui.Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
-                ImGui.SameLine();
+                // Different padding for directories and regular files
+                if (isDirectory) Dummy(Vector2.One * 25);
+                else Dummy(Vector2.One * 25 + Vector2.UnitX * 15);
+                SameLine();
 
-                if (isDirectory) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
-                else if (fileType != null && Path.GetExtension(file) == fileType) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
-                else ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
+                //Diferent colors based on the type of file we are searching for
+                if (isDirectory) PushStyleColor(ImGuiCol.Button, ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.DarkBlue)));
+                else if (fileType != null && Path.GetExtension(file) == fileType) PushStyleColor(ImGuiCol.Button, ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Blue)));
+                else PushStyleColor(ImGuiCol.Button, ColorConvertFloat4ToU32(Raylib.ColorNormalize(Color.Gray)));
                    
                 
-
-                if (ImGui.Button(Path.GetFileName(file)))
+                //On clicked File/Directory
+                if (Button(Path.GetFileName(file)))
                 {
+                    FilePath = Path.GetFullPath(file);
 
-                    
-
-                    if (!isDirectory && fileType != null)
+                    if (!isDirectory && fileType == Path.GetExtension(file))
                     {
-                        FilePath = Path.GetFullPath(file);
-
-                        ImGui.PopStyleColor();
-                        ImGui.EndChild();
+                        PopStyleColor();
+                        EndChild();
 
                         return true;
-                    }else 
-                    if(isDirectory)
-                    {
-                        FilePath = Path.GetFullPath(file);
                     }
-
-
-
-                    SaveLocation = FilePath;
                 }
-                ImGui.PopStyleColor();
-
+                PopStyleColor();
             }
         }
         
 
-        ImGui.EndChild();
+        EndChild();
 
         if (fileType == null)
         {
+            Separator();
 
-            ImGui.Separator();
-
-            ImGui.Dummy(Vector2.One * 10 + Vector2.UnitX * (ImGui.GetWindowWidth() - 150));
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            if (ImGui.Button("Select folder"))
+            Dummy(Vector2.One * 10 + Vector2.UnitX * (GetWindowWidth() - 150));
+            SameLine();
+            BeginGroup();
+            if (Button("Select folder"))
             {
-                SaveLocation = FilePath;
-
-                ImGui.EndGroup();
+                EndGroup();
 
                 return true;
             }
-            ImGui.EndGroup();
+            EndGroup();
         }
-
-        FilePath = "";
 
         return false;
     }
 
     #endregion
-    static void LoadPopus()
+    static void LoadPopups()
     {
-        if (ImGui.BeginPopup("Cant be empty", ImGuiWindowFlags.ChildMenu))
+        if (BeginPopup("Cant be empty", ImGuiWindowFlags.ChildMenu))
         {
-            ImGui.SetItemDefaultFocus();
-            ImGui.BeginGroup();
-            if (ImGui.Button("OK"))
+            SetItemDefaultFocus();
+            BeginGroup();
+            if (Button("OK"))
             {
-                ImGui.CloseCurrentPopup();
+                CloseCurrentPopup();
             }
-            ImGui.EndGroup();
+            EndGroup();
 
-            ImGui.EndPopup();
+            EndPopup();
         }
 
+        if(OpenFilePopup())
+        {
+            if(searchMode == 0)
+            {
+                GameController.LoadScene(SaveLocation);
+            }
+            else
+            if(searchMode == 1)
+            {
+                SpriteManager.LoadTexturesFromDataFile(SaveLocation, false);
+            }
+        }
+
+        if(SaveFilePopup())
+        {
+            if(searchMode == 0)
+            {
+                GameController.SaveScene(SaveName, SaveLocation);
+            }
+            else
+            if(searchMode == 1)
+            {
+                var newFile = File.Create(SaveLocation + "/" + SaveName + ".pfdata");
+                newFile.Close();
+
+                SpriteManager.SaveTextureDataFile(SpriteManager.LoadedImages, SaveLocation + "/" + SaveName + ".pfdata");
+            }
+        }
+    }
+
+    
+    static bool OpenFilePopup()
+    {
+        bool selected = false;
 
         Vector2 center = new(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
-        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
-        ImGui.SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
+        SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
 
-        if (ImGui.BeginPopupModal("Open File", ref OpenFileSelector))
+        if (BeginPopupModal("Open File", ref OpenFileSelector))
         {
-            ImGui.SetItemDefaultFocus();
+            SetItemDefaultFocus();
 
-            ImGui.BeginGroup();
+            BeginGroup();
 
-            if (ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
+            if (ArrowButton("###ArrowB", ImGuiDir.Up))
             {
                 if (SaveLocation != null && Directory.GetParent(SaveLocation) is DirectoryInfo info)
                 {
@@ -754,46 +946,51 @@ public static class InspectorVisual
                 }
             }
 
-            ImGui.SameLine();
-            if (ImGui.InputText("Select Path", ref SaveLocation, 100))
+            SameLine();
+            if (InputText("Select Path", ref SaveLocation, 100))
             {
                 //
             }
 
-            ImGui.EndGroup();
+            EndGroup();
 
-            ImGui.SeparatorText("Files:");
+            SeparatorText("Files:");
 
-            ImGui.BeginGroup();
+            BeginGroup();
 
-            string filePath = GameController.ProjectLoc;
-            if (DrawFileSelector(".json", ref filePath))
-            {
-                GameController.SaveLocation = filePath;
+            if (DrawFileSelector(searchEnding, ref SaveLocation))
+            {   
                 OpenFileSelector = false;
-
-                GameController.LoadScene();
+                selected = true;
             }
 
+            EndGroup();
 
-
-            ImGui.EndGroup();
-
-            ImGui.EndPopup();
+            EndPopup();
         }
 
+        return selected;
+    }
+
+    static bool SaveFilePopup()
+    {
+        bool selected = false;
+
+        Vector2 center = new(Raylib.GetScreenWidth() / 2, Raylib.GetScreenHeight() / 2);
+        SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
 
         // Save file popup
-        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
-        ImGui.SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
+        SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        SetNextWindowSize(Vector2.One * 500 + Vector2.UnitX * 300, ImGuiCond.Appearing);
 
-        if (ImGui.BeginPopupModal("Save File", ref SaveFileSelector))
+        if (BeginPopupModal("Save File", ref SaveFileSelector))
         {
-            ImGui.SetItemDefaultFocus();
+            SetItemDefaultFocus();
 
-            ImGui.BeginGroup();
+            BeginGroup();
 
-            if (ImGui.ArrowButton("###ArrowB", ImGuiDir.Up))
+            if (ArrowButton("###ArrowB", ImGuiDir.Up))
             {
                 SaveLocation ??= "./";
 
@@ -803,36 +1000,287 @@ public static class InspectorVisual
                 }
             }
 
-            ImGui.SameLine();
-            if (ImGui.InputText("Select Path", ref SaveLocation, 100))
+            SameLine();
+            if (InputText("Select Path", ref SaveLocation, 100))
             {
                 //
             }
-            ImGui.Dummy(Vector2.One * 30);
-            ImGui.SameLine();
-            if (ImGui.InputText("File Name", ref SaveName, 40))
+            Dummy(Vector2.One * 30);
+            SameLine();
+            if (InputText("File Name", ref SaveName, 40))
             {
                 if(SaveName == "") SaveName = "Data";
             }
 
-            ImGui.Dummy(Vector2.One * 30);
+            Dummy(Vector2.One * 30);
 
 
-            ImGui.EndGroup();
+            EndGroup();
 
-            ImGui.SeparatorText("Files:");
+            SeparatorText("Files:");
 
-            string filePath = GameController.ProjectLoc;
-            if (DrawFileSelector(null, ref filePath))
+            if (DrawFileSelector(null, ref SaveLocation))
             {
-                GameController.SaveLocation = filePath;
+                selected = true;
                 SaveFileSelector = false;
-
-                GameController.SaveScene(SaveName);
             }
 
-            ImGui.EndPopup();
+            EndPopup();
         }
+
+        return selected;
+    }
+
+    #region File Importer
+
+    static void  DrawFileImporter()
+    {
+        SetNextWindowSize(Vector2.One * 500, ImGuiCond.Once);
+        SetNextWindowPos(Vector2.One * 500, ImGuiCond.Once);
+
+        Begin("Sprite Importer", ref ShowFileImporter, ImGuiWindowFlags.NoCollapse );
+
+            TextColored(Raylib.ColorNormalize(Color.LightGray), "Drop a file to load it");
+
+
+            if(saveTextPath != "")
+            {
+                Text("Writing into: ");
+                SameLine();
+
+                var relPath = Path.GetRelativePath(GameController.ProjectLoc, saveTextPath);
+
+                TextColored(Raylib.ColorNormalize(Color.SkyBlue), relPath);
+            }
+            
+
+            if(Raylib.IsFileDropped() && GetIO().WantCaptureMouse)
+            {
+                var files = Raylib.GetDroppedFiles();
+        
+                foreach (var file in files)
+                {
+                    Console.WriteLine("Dropped: " + file);
+
+                    if(Path.GetExtension(file) == ".pfdata")
+                    {
+
+
+                        saveTextPath = file;
+
+                        var addedImages = SpriteManager.LoadTexturesFromDataFile(file, false);
+
+                        foreach (var image in addedImages)
+                        {
+                            DroppedImages.Add(image.ID, image);
+                        }
+
+                    }
+                    else
+                    {
+                        var newImg = new ImageData(file);
+                        DroppedImages.Add(newImg.ID, newImg);
+                    }
+                }
+
+
+                var unloadF = Raylib.LoadDroppedFiles();
+
+                Raylib.UnloadDroppedFiles(unloadF);
+            }
+
+            int lenght = 0;
+
+            BeginChild("GeneralArea", new Vector2(-1, - 50), ImGuiChildFlags.Borders);
+
+            foreach (var image in DroppedImages.ToList())
+            {
+                BeginChild(image.Key, new Vector2(200, 200), ImGuiChildFlags.Borders);
+                
+                PushID(image.Key);
+
+                var relPath = Path.GetRelativePath(saveTextPath, image.Value.texturePath);
+
+                TextColored(Raylib.ColorNormalize(Color.Gold), "Loaded ID: " + image.Key);
+
+                Text("Loaded Image at:");
+                TextColored(Raylib.ColorNormalize(Color.SkyBlue), relPath);
+
+                var s = new Vector2(image.Value.TextSizeX, image.Value.TextSizeY);
+                
+                s = Raymath.Vector2Normalize(s);
+
+                PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.Blank));
+                PushStyleColor(ImGuiCol.ButtonHovered, Raylib.ColorNormalize(Raylib.ColorAlpha(Color.Blue, .2f)));
+                RlImGui.ImageButtonSize("Butt"+relPath, image.Value.loadedTexture, s*200);
+                PopStyleColor();
+                PopStyleColor();
+
+                if (BeginDragDropSource())
+                {
+                    unsafe
+                    {
+                        string data = image.Key;
+                        SetDragDropPayload("LoadingTextureDragData", (IntPtr)(&data), (uint)sizeof(string));
+                    }
+                    
+                    Text(Path.GetFileName(relPath));
+
+                    EndDragDropSource();
+                }
+
+
+                if(BeginDragDropTarget())
+                {
+
+                    var data = AcceptDragDropPayload("LoadingTextureDragData");
+
+
+                    unsafe
+                    {
+                        if(data.NativePtr != null)
+                        {
+                            string dataPtr = ((string*)data.Data.ToPointer())[0];
+
+                            image.Value.textureNormalPath = DroppedImages[dataPtr].texturePath;
+                            image.Value.loadedNormal = Raylib.LoadTexture(DroppedImages[dataPtr].texturePath);
+                            image.Value.hasNormal = true;
+
+                            SpriteManager.RemoveTexture(dataPtr);
+                            DroppedImages.Remove(dataPtr);
+                        }
+
+                    }
+                    
+
+                    EndDragDropTarget();
+                }
+
+                if(image.Value.hasNormal)
+                {
+                    Text("Attached normal:");
+                    RlImGui.ImageSize(image.Value.loadedNormal, s * 100);
+                }
+
+                Text("Sprite size:");
+
+
+                InputInt("###Int1", ref image.Value.SpriteSizeX, 0);
+                InputInt("###Int2", ref image.Value.SpriteSizeY, 0);
+        
+
+                Dummy(new Vector2(140, 30));
+                Dummy(new Vector2(140, 30));
+                SameLine();
+                if(Button("X", new Vector2(20, 20)))
+                {
+                    SpriteManager.RemoveTexture(image.Key);
+                    DroppedImages.Remove(image.Key);
+                }
+
+                PopID();
+                EndChild();
+
+
+                lenght += 200;
+
+                if(lenght + 200 < GetWindowWidth())
+                {
+                    SameLine();
+                } else
+                {
+                    lenght = 0;
+                }
+
+            }
+
+            Dummy(Vector2.One);
+
+            EndChild();
+
+            if(Button("Save Changes"))
+            {
+                SpriteManager.SaveTextureDataFile(DroppedImages, saveTextPath);
+
+                foreach (var loadedImg in DroppedImages)
+                {
+                    SpriteManager.RemoveTexture(loadedImg.Key);
+                }
+
+                DroppedImages = [];
+
+                saveTextPath = "";
+            }
+            
+            
+            
+        End();
+    }
+
+    #endregion
+
+    
+
+    static void DrawLoadedImageList()
+    {
+        SetNextWindowSize(Vector2.One * 400, ImGuiCond.Once);
+        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitY * 400, ImGuiCond.Once);
+
+        Begin("Loaded Image List", ImGuiWindowFlags.AlwaysVerticalScrollbar);
+        
+        int lenght = 0;
+
+        foreach (var image in SpriteManager.LoadedImages.ToList())
+        {
+            BeginChild(image.Key, new Vector2(100, 100), ImGuiChildFlags.Borders);
+                
+                PushID(image.Key);
+
+                TextColored(Raylib.ColorNormalize(Color.Gold), "Loaded ID: " + image.Key);
+
+                var s = new Vector2(image.Value.TextSizeX, image.Value.TextSizeY);
+                
+                s = Raymath.Vector2Normalize(s);
+
+                PushStyleColor(ImGuiCol.Button, Raylib.ColorNormalize(Color.Blank));
+                PushStyleColor(ImGuiCol.ButtonHovered, Raylib.ColorNormalize(Raylib.ColorAlpha(Color.Blue, .2f)));
+                RlImGui.ImageButtonSize("Butt", image.Value.loadedTexture, s*100);
+                PopStyleColor();
+                PopStyleColor();
+
+                if (BeginDragDropSource())
+                {
+                    unsafe
+                    {
+                        string data = image.Key;
+                        SetDragDropPayload("TextureDragData", (IntPtr)(&data), (uint)sizeof(string));
+                    }
+                    
+                    Text(Path.GetFileName(image.Key));
+
+                    EndDragDropSource();
+                }
+
+
+
+                PopID();
+                EndChild();
+
+
+            lenght += 100;
+
+            if(lenght + 100 < GetWindowWidth())
+            {
+                SameLine();
+            } else
+            {
+                lenght = 0;
+            }
+
+
+        }
+
+        End();
     }
 
 
@@ -846,16 +1294,16 @@ public static class InspectorVisual
     static Vector2 lastMousePos = Vector2.Zero;
     public static void ClickAndDrag()
     {
-        CameraManager.I.freeRoam = !ImGui.GetIO().WantCaptureMouse;
+        CameraManager.I.freeRoam = !GetIO().WantCaptureMouse;
         
         if(Raylib.IsKeyDown(KeyboardKey.LeftControl) && Raylib.IsKeyPressed(KeyboardKey.S))
         {
             Console.WriteLine("Saving");
             SaveFileSelector = true;
-            ImGui.OpenPopup("Open File");
+            OpenPopup("Open File");
         }
 
-        if(ImGui.GetIO().WantCaptureMouse) return;
+        if(GetIO().WantCaptureMouse) return;
 
         if(Raylib.IsMouseButtonPressed(MouseButton.Right))
         {
@@ -865,6 +1313,8 @@ public static class InspectorVisual
         if(Raylib.IsMouseButtonDown(MouseButton.Right))
         {
             CameraManager.I.Cam.Target = CameraManager.I.Cam.Target - (Raylib.GetMousePosition() - lastMousePos);
+           // LightsManager
+            
             lastMousePos = Raylib.GetMousePosition();
         }
 

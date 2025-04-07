@@ -31,3 +31,13 @@ public class InspectorShowOrderAttribute(int Order) : Attribute
 {
     public int order = Order;
 }
+
+
+/// <summary>
+/// Makes this property be able to receive Data of type DataReceiver by dropping it in the Inspector
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public class InspectorReceiveDropAttribute(string DataReceiver) : Attribute
+{
+    public string receiveData = DataReceiver;
+}

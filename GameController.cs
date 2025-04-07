@@ -11,7 +11,6 @@ using ImGuiNET;
 
 using Patoframework.Inspector;
 using PatoframeWork.Rendering;
-using BulletSharp;
 using System.Reflection;
 namespace PatoframeWork;
 
@@ -87,7 +86,7 @@ public static class GameController
         SetupFolders();
 
         // Init Default Texture folder
-        SpriteManager.LoadTextureFolder("/Resources/Images");
+        //SpriteManager.LoadTextureFolder("/Resources/Images");
 
 
 
@@ -102,13 +101,10 @@ public static class GameController
             RlImGui.Setup(true);    
         
             ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-            ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+            ImGui.GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
 
         #endif
-
-        
-        
 
         // Shader Setup:
         #region Default Shader Setup
@@ -119,7 +115,7 @@ public static class GameController
 
         int pixelteLoc = GetShaderLocation(PixelateShader, "DownscaleRes");
 
-        float pixelateAmount = 5f;
+        float pixelateAmount = .1f;
 
         
 
@@ -142,13 +138,15 @@ public static class GameController
         int lightColorLoc = GetShaderLocation(DefaultShader, "LightColor");
         int ambientColorLoc = GetShaderLocation(DefaultShader, "AmbientColor");
 
+        Texture2D normalMap = new();
+
         #endregion
 
         
 
         RenderTexture2D texture2D = LoadRenderTexture(1920, 1020);
 
-        
+        SetTextureFilter(texture2D.Texture, TextureFilter.Trilinear);
 
         #region GameLoop
 
@@ -173,29 +171,40 @@ public static class GameController
             // Load Shader Variables
             if(LightsManager.IsDirty() || firstLoad)
             {
-                var LightPoses = LightsManager.GetNearestLights(5);
-
-                var LightColors = LightsManager.GetNearestLightsColors();
-
-            
-                SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);    
-
-                SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
                 
-                SetShaderValue(DefaultShader, rLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height), ShaderUniformDataType.Vec2);
-                SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.Cam.Target, ShaderUniformDataType.Vec2);
-                SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.Cam.Zoom, ShaderUniformDataType.Float);
+
+                if(LightsManager.IsDirty())
+                {
+                    var LightPoses = LightsManager.GetNearestLights(5);
+
+                    var LightColors = LightsManager.GetNearestLightsColors();
+
+                    SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);    
+
+                    SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
+                    
+                    SetShaderValue(DefaultShader, rLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height), ShaderUniformDataType.Vec2);
+                    SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.Cam.Target, ShaderUniformDataType.Vec2);
+                    SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.Cam.Zoom, ShaderUniformDataType.Float);
 
 
-                SetShaderValue(DefaultShader, lrLoc, LightsManager.LightResolution, ShaderUniformDataType.Int);
+                    SetShaderValue(DefaultShader, lrLoc, LightsManager.LightResolution, ShaderUniformDataType.Int);
 
-                SetShaderValue(DefaultShader, fallOffLoc, LightsManager.LightFallOff, ShaderUniformDataType.Vec3);
+                    SetShaderValue(DefaultShader, fallOffLoc, LightsManager.LightFallOff, ShaderUniformDataType.Vec3);
+                    SetShaderValueV(DefaultShader, lightColorLoc, LightColors, ShaderUniformDataType.Vec4, LightPoses.Length);
 
+
+                }
+                
                 Vector4 ambientLight = ColorNormalize(LightsManager.AmbientLight);
 
-
-                SetShaderValueV(DefaultShader, lightColorLoc, LightColors, ShaderUniformDataType.Vec4, LightPoses.Length);
                 SetShaderValue(DefaultShader, ambientColorLoc, ambientLight, ShaderUniformDataType.Vec4 );
+
+                unsafe
+                {
+                    SetShaderValue(DefaultShader, normalMapLoc, &normalMap, ShaderUniformDataType.Sampler2D);
+                }
+
 
 
                 firstLoad = false;
@@ -230,39 +239,29 @@ public static class GameController
                     {            
                         if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
                         {
-                            image.loadedTexture ??= LoadTextureFromImage(image.image);
-                            
 
-                            if(image.loadedNormal == null)
-                            {
-                                if(image.imageNormal != null) image.loadedNormal = LoadTextureFromImage((Image)image.imageNormal);
-                                else image.loadedNormal = SpriteManager.DefaultText;
-                            }
+                            normalMap = image.loadedNormal;
 
 
+                            Rlgl.EnableTexture(DefaultShader.Id);
 
-                            SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)image.loadedNormal);
 
                             if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
                             {
                                 DrawTexturePro(loadedTexture, sprite, new Rectangle(toRender[i].Owner.GlobalPosition, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10), (toRender[i].Owner.Parent != 0 ? toRender[i].Owner.GlobalPosition + FindEntity(toRender[i].Owner.Parent).GlobalPosition : Vector2.Zero) + (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10) /  2, toRender[i].zRot, toRender[i].Color);
                             }
                             else
-                            ErrorManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
+                            LogManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
                             
                         } else
-                        ErrorManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
+                        LogManager.LogError($"Could not find Image ID {toRender[i].ImageID}");
 
                     } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Square)
-
                     {
-                        SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
-
                         DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
 
                     } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Circle)
                     {
-                        SetShaderValueTexture(DefaultShader, normalMapLoc, (Texture2D)SpriteManager.DefaultText);
                      
                         DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
                     }
@@ -316,7 +315,7 @@ public static class GameController
 
         #endif
 
-        SpriteManager.UnloadAllImages();
+        SpriteManager.RemoveAllTextures();
 
 
         CloseWindow();
@@ -335,10 +334,10 @@ public static class GameController
     /// <summary>
     /// Loads an Entity list from a .json file.
     /// </summary>
-    public static void LoadScene()
+    public static void LoadScene(string path, bool relative = false)
     {
         
-        var data = File.ReadAllText(SaveLocation);
+        var data = File.ReadAllText((relative? ProjectLoc : "") + path );
 
         // Clean up current entity list
         foreach (var entity in Entities.ToList())
@@ -361,13 +360,16 @@ public static class GameController
     /// <summary>
     /// Saves all the Entities in a .json file.
     /// </summary>
-    public static void SaveScene(string fileName)
+    public static void SaveScene(string fileName, string? path = null)
     {   
+        if(path == null) path = SaveLocation;
+        else SaveLocation = path;
+
         string jsonStringGen = JsonConvert.SerializeObject(Entities, settings);
 
         SaveLocation = Path.EndsInDirectorySeparator(SaveLocation) ? SaveLocation : SaveLocation + "/";
 
-        File.WriteAllText(SaveLocation + fileName + ".json", jsonStringGen);
+        File.WriteAllText(path + "/" + fileName + ".json", jsonStringGen);
     }
 
     #endregion
