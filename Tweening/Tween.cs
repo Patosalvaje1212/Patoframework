@@ -3,7 +3,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Raylib_cs;
 
-namespace PatoframeWork.Tweening;
+namespace PatoFramework.Tweening;
 
 public class Tween<T>(T startVal, T endVal, float duration, Action<T> onUpdateTween)
 {

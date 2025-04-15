@@ -1,8 +1,8 @@
-using PatoframeWork;
+using PatoFramework;
 using Raylib_cs;
 using System.Numerics;
 
-namespace PatoframeWork.Physics;
+namespace PatoFramework.Physics;
 
 public class PhysicBehaviour : Behaviour
 {

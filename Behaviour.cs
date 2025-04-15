@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
-using PatoframeWork.Inspector;
-using PatoframeWork.Rendering;
+using PatoFramework.Inspector;
+using PatoFramework.Rendering;
 using Raylib_cs;
 
-namespace PatoframeWork;
+namespace PatoFramework;
 
 /// <summary>
 /// Basic class for all the Behaviours

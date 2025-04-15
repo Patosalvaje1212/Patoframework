@@ -4,7 +4,7 @@ using System.Numerics;
 using Newtonsoft.Json;
 using Raylib_cs;
 
-namespace PatoframeWork.Rendering;
+namespace PatoFramework.Rendering;
 
 public static class LightsManager
 {

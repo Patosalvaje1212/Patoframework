@@ -1,10 +1,10 @@
 using System.Numerics;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
-using PatoframeWork.Inspector;
+using PatoFramework.Inspector;
 
 
-namespace PatoframeWork;
+namespace PatoFramework;
 
 
 public class Entity

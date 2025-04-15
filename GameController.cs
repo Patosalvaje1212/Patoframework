@@ -9,10 +9,10 @@ using static Raylib_cs.Raylib;
 using rlImGui_cs;
 using ImGuiNET;
 
-using Patoframework.Inspector;
-using PatoframeWork.Rendering;
+using PatoFramework.Inspector;
+using PatoFramework.Rendering;
 using System.Reflection;
-namespace PatoframeWork;
+namespace PatoFramework;
 
 /// <summary>
 /// Base class for the game Loop, it holds all the Enitites.

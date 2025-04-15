@@ -1,7 +1,7 @@
-using PatoframeWork.Inspector;
+using PatoFramework.Inspector;
 using Raylib_cs;
 
-namespace PatoframeWork.Rendering;
+namespace PatoFramework.Rendering;
 
 /// <summary>
 /// Behaviour that renders a sprite onto the screen, at its Owner Entity's position.

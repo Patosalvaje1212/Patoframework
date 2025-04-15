@@ -2,7 +2,7 @@
 using System.Numerics;
 using Raylib_cs;
 
-namespace PatoframeWork.Rendering;
+namespace PatoFramework.Rendering;
 
 
 /// <summary>

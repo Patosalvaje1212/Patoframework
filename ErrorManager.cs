@@ -1,5 +1,5 @@
 
-namespace PatoframeWork;
+namespace PatoFramework;
 
 
 /// <summary>

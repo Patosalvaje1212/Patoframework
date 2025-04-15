@@ -2,18 +2,18 @@ using System.Numerics;
 using System.Reflection;
 
 
-using PatoframeWork;
-using PatoframeWork.Rendering;
+using PatoFramework;
+using PatoFramework.Rendering;
 
 using ImGuiNET;
 using Raylib_cs;
 using System.Collections;
-using PatoframeWork.Inspector;
+using PatoFramework.Inspector;
 using rlImGui_cs;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Patoframework.Inspector;
+namespace PatoFramework.Inspector;
 using static ImGui;
 
 public static class InspectorVisual

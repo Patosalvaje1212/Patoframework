@@ -14,394 +14,380 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Behaviour.yml",
+      "source_relative_path": "reference/PatoFramework.Behaviour.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Behaviour.html"
+          "relative_path": "reference/PatoFramework.Behaviour.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Behaviour",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Behaviour.yml\" sourcestartlinenumber=\"1\">Basic class for all the Behaviours</p>\n"
+      "Title": "PatoFramework.Behaviour",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Behaviour.yml\" sourcestartlinenumber=\"1\">Basic class for all the Behaviours</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.BehaviourHelper.yml",
+      "source_relative_path": "reference/PatoFramework.BehaviourHelper.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.BehaviourHelper.html"
+          "relative_path": "reference/PatoFramework.BehaviourHelper.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.BehaviourHelper",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.BehaviourHelper.yml\" sourcestartlinenumber=\"1\">Static class for general helpers</p>\n"
+      "Title": "PatoFramework.BehaviourHelper",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.BehaviourHelper.yml\" sourcestartlinenumber=\"1\">Static class for general helpers</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Entity.yml",
+      "source_relative_path": "reference/PatoFramework.Entity.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Entity.html"
+          "relative_path": "reference/PatoFramework.Entity.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Entity",
+      "Title": "PatoFramework.Entity",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.GameController.yml",
+      "source_relative_path": "reference/PatoFramework.GameController.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.GameController.html"
+          "relative_path": "reference/PatoFramework.GameController.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.GameController",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.GameController.yml\" sourcestartlinenumber=\"1\">Base class for the game Loop, it holds all the Enitites.</p>\n"
+      "Title": "PatoFramework.GameController",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.GameController.yml\" sourcestartlinenumber=\"1\">Base class for the game Loop, it holds all the Enitites.</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.InspectorHideAttribute.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorHideAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.InspectorHideAttribute.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorHideAttribute.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.InspectorHideAttribute",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Inspector.InspectorHideAttribute.yml\" sourcestartlinenumber=\"1\">Prevents the Inspector from exposing this variable</p>\n"
+      "Title": "PatoFramework.Inspector.InspectorHideAttribute",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Inspector.InspectorHideAttribute.yml\" sourcestartlinenumber=\"1\">Prevents the Inspector from exposing this variable</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.InspectorHideNullAttribute.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorHideNullAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.InspectorHideNullAttribute.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorHideNullAttribute.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.InspectorHideNullAttribute",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Inspector.InspectorHideNullAttribute.yml\" sourcestartlinenumber=\"1\">Hides this property if its value is null</p>\n"
+      "Title": "PatoFramework.Inspector.InspectorHideNullAttribute",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Inspector.InspectorHideNullAttribute.yml\" sourcestartlinenumber=\"1\">Hides this property if its value is null</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.InspectorNonEditableAttribute.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorNonEditableAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.InspectorNonEditableAttribute.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorNonEditableAttribute.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.InspectorNonEditableAttribute",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Inspector.InspectorNonEditableAttribute.yml\" sourcestartlinenumber=\"1\">Prevents this variable from being edited in the inspector ( readonly )</p>\n"
+      "Title": "PatoFramework.Inspector.InspectorNonEditableAttribute",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Inspector.InspectorNonEditableAttribute.yml\" sourcestartlinenumber=\"1\">Prevents this variable from being edited in the inspector ( readonly )</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.InspectorReceiveDropAttribute.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorReceiveDropAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.InspectorReceiveDropAttribute.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorReceiveDropAttribute.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.InspectorReceiveDropAttribute",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Inspector.InspectorReceiveDropAttribute.yml\" sourcestartlinenumber=\"1\">Makes this property be able to receive Data of type DataReceiver by dropping it in the Inspector</p>\n"
+      "Title": "PatoFramework.Inspector.InspectorReceiveDropAttribute",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Inspector.InspectorReceiveDropAttribute.yml\" sourcestartlinenumber=\"1\">Makes this property be able to receive Data of type DataReceiver by dropping it in the Inspector</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.InspectorShowOrderAttribute.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorShowOrderAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.InspectorShowOrderAttribute.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorShowOrderAttribute.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.InspectorShowOrderAttribute",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Inspector.InspectorShowOrderAttribute.yml\" sourcestartlinenumber=\"1\">Forces the Inspector to draw this property in an specific order</p>\n"
+      "Title": "PatoFramework.Inspector.InspectorShowOrderAttribute",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Inspector.InspectorShowOrderAttribute.yml\" sourcestartlinenumber=\"1\">Forces the Inspector to draw this property in an specific order</p>\n"
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.PrefabLoader.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.InspectorVisual.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.PrefabLoader.html"
+          "relative_path": "reference/PatoFramework.Inspector.InspectorVisual.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector.PrefabLoader",
+      "Title": "PatoFramework.Inspector.InspectorVisual",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Inspector.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.PrefabLoader.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Inspector.html"
+          "relative_path": "reference/PatoFramework.Inspector.PrefabLoader.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Inspector",
+      "Title": "PatoFramework.Inspector.PrefabLoader",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.LogManager.yml",
+      "source_relative_path": "reference/PatoFramework.Inspector.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.LogManager.html"
+          "relative_path": "reference/PatoFramework.Inspector.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.LogManager",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.LogManager.yml\" sourcestartlinenumber=\"1\">Simple class to easily log Errors to the Console</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Physics.PhysicBehaviour.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/PatoframeWork.Physics.PhysicBehaviour.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "PatoframeWork.Physics.PhysicBehaviour",
+      "Title": "PatoFramework.Inspector",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Physics.yml",
+      "source_relative_path": "reference/PatoFramework.LogManager.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Physics.html"
+          "relative_path": "reference/PatoFramework.LogManager.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Physics",
+      "Title": "PatoFramework.LogManager",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.LogManager.yml\" sourcestartlinenumber=\"1\">Simple class to easily log Errors to the Console</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "reference/PatoFramework.Physics.PhysicBehaviour.yml",
+      "output": {
+        ".html": {
+          "relative_path": "reference/PatoFramework.Physics.PhysicBehaviour.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "PatoFramework.Physics.PhysicBehaviour",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.CameraManager.yml",
+      "source_relative_path": "reference/PatoFramework.Physics.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.CameraManager.html"
+          "relative_path": "reference/PatoFramework.Physics.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.CameraManager",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Rendering.CameraManager.yml\" sourcestartlinenumber=\"1\">Class to handle the camera logic</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.ImageData.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.ImageData.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.ImageData",
+      "Title": "PatoFramework.Physics",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.LightBehaviour.yml",
+      "source_relative_path": "reference/PatoFramework.Rendering.CameraManager.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.LightBehaviour.html"
+          "relative_path": "reference/PatoFramework.Rendering.CameraManager.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.LightBehaviour",
+      "Title": "PatoFramework.Rendering.CameraManager",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Rendering.CameraManager.yml\" sourcestartlinenumber=\"1\">Class to handle the camera logic</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "reference/PatoFramework.Rendering.ImageData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "reference/PatoFramework.Rendering.ImageData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "PatoFramework.Rendering.ImageData",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.LightsManager.yml",
+      "source_relative_path": "reference/PatoFramework.Rendering.LightBehaviour.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.LightsManager.html"
+          "relative_path": "reference/PatoFramework.Rendering.LightBehaviour.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.LightsManager",
+      "Title": "PatoFramework.Rendering.LightBehaviour",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.RendererBehaviour.VisualShapeType.yml",
+      "source_relative_path": "reference/PatoFramework.Rendering.LightsManager.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.RendererBehaviour.VisualShapeType.html"
+          "relative_path": "reference/PatoFramework.Rendering.LightsManager.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.RendererBehaviour.VisualShapeType",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Rendering.RendererBehaviour.VisualShapeType.yml\" sourcestartlinenumber=\"1\">Visual Shape selector for a <code>RendererBehaviour</code>.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.RendererBehaviour.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.RendererBehaviour.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.RendererBehaviour",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Rendering.RendererBehaviour.yml\" sourcestartlinenumber=\"1\">Behaviour that renders a sprite onto the screen, at its Owner Entity's position.</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.SpriteManager.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.SpriteManager.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "PatoframeWork.Rendering.SpriteManager",
-      "Summary": "<p sourcefile=\"reference/PatoframeWork.Rendering.SpriteManager.yml\" sourcestartlinenumber=\"1\">Main class to handle Sprite Loading and Unloading Logic;</p>\n"
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Rendering.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/PatoframeWork.Rendering.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "PatoframeWork.Rendering",
+      "Title": "PatoFramework.Rendering.LightsManager",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Tweening.Tween-1.yml",
+      "source_relative_path": "reference/PatoFramework.Rendering.RendererBehaviour.VisualShapeType.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Tweening.Tween-1.html"
+          "relative_path": "reference/PatoFramework.Rendering.RendererBehaviour.VisualShapeType.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Tweening.Tween<T>",
+      "Title": "PatoFramework.Rendering.RendererBehaviour.VisualShapeType",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Rendering.RendererBehaviour.VisualShapeType.yml\" sourcestartlinenumber=\"1\">Visual Shape selector for a <code>RendererBehaviour</code>.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "reference/PatoFramework.Rendering.RendererBehaviour.yml",
+      "output": {
+        ".html": {
+          "relative_path": "reference/PatoFramework.Rendering.RendererBehaviour.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "PatoFramework.Rendering.RendererBehaviour",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Rendering.RendererBehaviour.yml\" sourcestartlinenumber=\"1\">Behaviour that renders a sprite onto the screen, at its Owner Entity's position.</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "reference/PatoFramework.Rendering.SpriteManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "reference/PatoFramework.Rendering.SpriteManager.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "PatoFramework.Rendering.SpriteManager",
+      "Summary": "<p sourcefile=\"reference/PatoFramework.Rendering.SpriteManager.yml\" sourcestartlinenumber=\"1\">Main class to handle Sprite Loading and Unloading Logic;</p>\n"
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "reference/PatoFramework.Rendering.yml",
+      "output": {
+        ".html": {
+          "relative_path": "reference/PatoFramework.Rendering.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "PatoFramework.Rendering",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Tweening.TweenManager.yml",
+      "source_relative_path": "reference/PatoFramework.Tweening.Tween-1.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Tweening.TweenManager.html"
+          "relative_path": "reference/PatoFramework.Tweening.Tween-1.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Tweening.TweenManager",
+      "Title": "PatoFramework.Tweening.Tween<T>",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.Tweening.yml",
+      "source_relative_path": "reference/PatoFramework.Tweening.TweenManager.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.Tweening.html"
+          "relative_path": "reference/PatoFramework.Tweening.TweenManager.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork.Tweening",
+      "Title": "PatoFramework.Tweening.TweenManager",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/PatoframeWork.yml",
+      "source_relative_path": "reference/PatoFramework.Tweening.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/PatoframeWork.html"
+          "relative_path": "reference/PatoFramework.Tweening.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "PatoframeWork",
+      "Title": "PatoFramework.Tweening",
       "Summary": null
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "reference/Patoframework.Inspector.InspectorVisual.yml",
+      "source_relative_path": "reference/PatoFramework.yml",
       "output": {
         ".html": {
-          "relative_path": "reference/Patoframework.Inspector.InspectorVisual.html"
+          "relative_path": "reference/PatoFramework.html"
         }
       },
       "version": "",
       "Uid": null,
       "IsMRef": true,
-      "Title": "Patoframework.Inspector.InspectorVisual",
-      "Summary": null
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "reference/Patoframework.Inspector.yml",
-      "output": {
-        ".html": {
-          "relative_path": "reference/Patoframework.Inspector.html"
-        }
-      },
-      "version": "",
-      "Uid": null,
-      "IsMRef": true,
-      "Title": "Patoframework.Inspector",
+      "Title": "PatoFramework",
       "Summary": null
     },
     {

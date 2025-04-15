@@ -1,6 +1,6 @@
 
 
-namespace PatoframeWork.Tweening;
+namespace PatoFramework.Tweening;
 
 public class TweenManager 
 {

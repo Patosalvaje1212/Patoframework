@@ -1,11 +1,11 @@
 
 
 using System.Numerics;
-using PatoframeWork;
+using PatoFramework;
 using Raylib_cs;
 
 
-namespace PatoframeWork.Rendering;
+namespace PatoFramework.Rendering;
 
 public class LightBehaviour : Behaviour
 {

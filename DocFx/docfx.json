@@ -10,7 +10,7 @@
             "dest": "reference",
             "disableGitFeatures": false,
             "disableDefaultFilter": false,
-            "filter": "filterConfig.yml"
+            "filter": "filterConfig.yml",
         }
     ],
     "build": {
@@ -40,5 +40,9 @@
         "dest": "../docs",
         "disableGitFeatures": false,
         "enableSearch": true,
+        "globalMetadata":{
+            "_appTitle": "PatoFramework",
+            "_enableSearch": "true",
+        }
     }
 }

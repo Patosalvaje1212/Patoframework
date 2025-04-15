@@ -5,7 +5,7 @@ using System.Text;
 
 using Raylib_cs;
 
-namespace PatoframeWork.Rendering;
+namespace PatoFramework.Rendering;
 
 /// <summary>
 /// Main class to handle Sprite Loading and Unloading Logic;

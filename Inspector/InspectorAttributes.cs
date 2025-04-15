@@ -1,5 +1,5 @@
 
-namespace PatoframeWork.Inspector;
+namespace PatoFramework.Inspector;
 
 /// <summary>
 /// Prevents the Inspector from exposing this variable

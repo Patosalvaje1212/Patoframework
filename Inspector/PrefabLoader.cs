@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using nkast.Aether.Physics2D.Dynamics.Contacts;
 
-namespace PatoframeWork.Inspector;
+namespace PatoFramework.Inspector;
 
 
 

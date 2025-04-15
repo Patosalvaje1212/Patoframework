@@ -1,11 +1,13 @@
 ---
 _layout: landing
+
 ---
 
-# This is the **HOMEPAGE**.
+# Welcome to the **PatoFramework** wiki.
 
-Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to write markdown files.
+### A lightweight game engine, developed for 2d games
 
 ## Quick Start Notes:
 
-1. Add images to the *images* folder if the file is referencing an image.
+- Go to the [Docs](docs/) to lear how to setup and start your journey.
+- Go to the [API Reference](reference/PatoFramework.html) to see and search among all classes, methods and variables.
