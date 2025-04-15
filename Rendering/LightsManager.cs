@@ -14,7 +14,7 @@ public static class LightsManager
 
     public static int LightResolution { get; set; } = 5;
     public static Color AmbientLight { get; set; } = Raylib.ColorAlpha(Color.White, 1f);
-    public static float LightFallOff { get; set; } = 0.5f;
+    public static float LightFallOff { get; set; } = .4f;
 
 
     public static void AddLight(LightBehaviour light) => Lights.Add(light);
@@ -55,7 +55,10 @@ public static class LightsManager
         for (int i = 0; i < nearLights.Length; i++)
         {
             //Pos[i] = new Vector3(.5f, .5f, .5f);
-            Pos[i] = WorldToScreenSpace( new Vector3(nearLights[i].Owner.GlobalPosition.X, nearLights[i].Owner.GlobalPosition.Y - Raylib.GetScreenHeight(), nearLights[i].Zpos));
+
+            var Pos2D = Raylib.GetWorldToScreen2D(nearLights[i].Owner.GlobalPosition, CameraManager.I.Cam);
+
+            Pos[i] =  new Vector3( Pos2D.X, Pos2D.Y, nearLights[i].Zpos);
         }
 
         return Pos;
@@ -69,6 +72,7 @@ public static class LightsManager
         for (int i = 0; i < lastNearLights.Length; i++)
         {
             //Pos[i] = new Vector3(.5f, .5f, .5f);
+
             Colors[i] = Raylib.ColorNormalize(lastNearLights[i].LightColor);
         }
 

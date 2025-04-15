@@ -23,7 +23,7 @@ public static class SpriteManager
 
 
     /// <summary>
-    /// Opens the .pfdata at <paramref name="dataFilePath"/>, and loads its images.
+    /// Opens the .pfimg at <paramref name="dataFilePath"/>, and loads its images.
     /// </summary>
     
     public static ImageData[] LoadTexturesFromDataFile(string dataFilePath, bool cleanUp)
@@ -75,7 +75,7 @@ public static class SpriteManager
                     LogManager.LogError($"Did not find suitable image at {globalPath1}.");
                 } else
                 {
-                    LogManager.LogError($"Did not find suitable normal map at {globalPath2}. If you did not intend to load a custom normal map for this image, please write the word 'null' at the 3rd argument, in the target .pfdata file ");
+                    LogManager.LogError($"Did not find suitable normal map at {globalPath2}. If you did not intend to load a custom normal map for this image, please write the word 'null' at the 3rd argument, in the target .pfimg file ");
                 }
             }
 
@@ -111,7 +111,7 @@ public static class SpriteManager
     }
 
 
-    // Be VERY carefull with unloadData bool, can cause memory leaks if you loose reference of the loaded images/Textures inside the ImageData
+    // Be VERY carefull with unloadData bool, can cause memory leaks if you lose reference of the loaded images/Textures inside the ImageData
     public static void RemoveTexture(string key, bool unloadData = true)
     {
         if(unloadData)

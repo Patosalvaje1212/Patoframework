@@ -56,7 +56,14 @@ public static class GameController
     // Frame Counter 
     public static int CurrentFrame { get; private set; } = 0;
 
-    public static int WindowW = 1400, WindowH = 800;
+    public static float PixelRatio = 4;
+
+
+    private static readonly int WindowW = 640;
+    
+    private static readonly int WindowH = 360;
+
+    public static readonly Vector2 WindowPixelSize = new(WindowW, WindowH);
 
 
     public static void MainThread()
@@ -111,12 +118,7 @@ public static class GameController
 
         bool firstLoad = true;
 
-        Shader PixelateShader = LoadShader( null, "Rendering/Shaders/PixelateScreen.fs");
-
-        int pixelteLoc = GetShaderLocation(PixelateShader, "DownscaleRes");
-
-        float pixelateAmount = .1f;
-
+       
         
 
         Shader DefaultShader = LoadShader(null, "Rendering/Shaders/DefaultNormal.fs");
@@ -144,9 +146,9 @@ public static class GameController
 
         
 
-        RenderTexture2D texture2D = LoadRenderTexture(1920, 1020);
+        RenderTexture2D texture2D = LoadRenderTexture(WindowW, WindowH);
 
-        SetTextureFilter(texture2D.Texture, TextureFilter.Trilinear);
+        //SetTextureFilter(texture2D.Texture, TextureFilter.Trilinear);
 
         #region GameLoop
 
@@ -161,50 +163,33 @@ public static class GameController
             CameraManager.I.UpdateCamera();
 
 
-            if(SpriteManager.IsDirty)
+            if(SpriteManager.IsDirty || firstLoad)
             {
                 SpriteManager.LoadAllTextures();
             }
 
-            SetShaderValue(PixelateShader, pixelteLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height) / pixelateAmount, ShaderUniformDataType.Vec2);
 
             // Load Shader Variables
             if(LightsManager.IsDirty() || firstLoad)
             {
                 
+                var LightPoses = LightsManager.GetNearestLights(5);
 
-                if(LightsManager.IsDirty())
-                {
-                    var LightPoses = LightsManager.GetNearestLights(5);
+                var LightColors = LightsManager.GetNearestLightsColors();
 
-                    var LightColors = LightsManager.GetNearestLightsColors();
+                SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);
 
-                    SetShaderValue(DefaultShader, lNumberLoc, LightPoses.Length, ShaderUniformDataType.Int);    
+                SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
+                
+                SetShaderValue(DefaultShader, rLoc, WindowPixelSize, ShaderUniformDataType.Vec2);
 
-                    SetShaderValueV(DefaultShader, lightPosesLoc, LightPoses, ShaderUniformDataType.Vec3, LightPoses.Length);
-                    
-                    SetShaderValue(DefaultShader, rLoc, new Vector2(texture2D.Texture.Width, texture2D.Texture.Height), ShaderUniformDataType.Vec2);
-                    SetShaderValue(DefaultShader, camOffLoc, CameraManager.I.Cam.Target, ShaderUniformDataType.Vec2);
-                    SetShaderValue(DefaultShader, camZoomLoc, CameraManager.I.Cam.Zoom, ShaderUniformDataType.Float);
+                SetShaderValue(DefaultShader, fallOffLoc, LightsManager.LightFallOff, ShaderUniformDataType.Vec3);
+                SetShaderValueV(DefaultShader, lightColorLoc, LightColors, ShaderUniformDataType.Vec4, LightPoses.Length);
 
-
-                    SetShaderValue(DefaultShader, lrLoc, LightsManager.LightResolution, ShaderUniformDataType.Int);
-
-                    SetShaderValue(DefaultShader, fallOffLoc, LightsManager.LightFallOff, ShaderUniformDataType.Vec3);
-                    SetShaderValueV(DefaultShader, lightColorLoc, LightColors, ShaderUniformDataType.Vec4, LightPoses.Length);
-
-
-                }
                 
                 Vector4 ambientLight = ColorNormalize(LightsManager.AmbientLight);
 
-                SetShaderValue(DefaultShader, ambientColorLoc, ambientLight, ShaderUniformDataType.Vec4 );
-
-                unsafe
-                {
-                    SetShaderValue(DefaultShader, normalMapLoc, &normalMap, ShaderUniformDataType.Sampler2D);
-                }
-
+                SetShaderValue(DefaultShader, ambientColorLoc, ambientLight, ShaderUniformDataType.Vec4);
 
 
                 firstLoad = false;
@@ -227,28 +212,32 @@ public static class GameController
                 #if DEBUG
 
                     InspectorVisual.DrawSelectedPos();
-
                 
                 #endif
         
 
                 for (int i = 0; i < toRender.Count; i++)
                 {
+                    var smoothPos = toRender[i].Owner.GlobalPosition;
+                    smoothPos.X = (int)MathF.Round(MathF.Round(smoothPos.X * PixelRatio / 10 ) * 10 / PixelRatio);
+                    smoothPos.Y = (int)MathF.Round(MathF.Round(-smoothPos.Y * PixelRatio / 10 ) * 10 / PixelRatio);
 
                     if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Image)
                     {            
                         if(SpriteManager.LoadedImages.TryGetValue(toRender[i].ImageID, out ImageData? image))
                         {
-
                             normalMap = image.loadedNormal;
+                            Console.WriteLine(image.hasNormal);
 
-
-                            Rlgl.EnableTexture(DefaultShader.Id);
-
+                            SetShaderValueTexture(DefaultShader, normalMapLoc, normalMap);
 
                             if(image.SpriteRects.TryGetValue(toRender[i].SpriteID, out Rectangle sprite) && image.loadedTexture is Texture2D loadedTexture)
                             {
-                                DrawTexturePro(loadedTexture, sprite, new Rectangle(toRender[i].Owner.GlobalPosition, Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10), (toRender[i].Owner.Parent != 0 ? toRender[i].Owner.GlobalPosition + FindEntity(toRender[i].Owner.Parent).GlobalPosition : Vector2.Zero) + (Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10) /  2, toRender[i].zRot, toRender[i].Color);
+                                Vector2 spriteSize = Raymath.Vector2Normalize(sprite.Size) * toRender[i].Size * 10;
+
+                                DrawTexturePro(loadedTexture, new Rectangle(sprite.Position, new Vector2(sprite.Width, -sprite.Height)), new Rectangle(smoothPos, spriteSize),
+                                (toRender[i].Owner.Parent != 0 ? smoothPos : Vector2.Zero) + spriteSize /  2,
+                                toRender[i].zRot, toRender[i].Color);
                             }
                             else
                             LogManager.LogError($"Unexpected missing texture when loading texure ID {toRender[i].ImageID}");
@@ -258,24 +247,24 @@ public static class GameController
 
                     } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Square)
                     {
-                        DrawRectangle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X) - (int)toRender[i].Size/2, (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
+                        DrawRectangle((int)MathF.Round(smoothPos.X) - (int)toRender[i].Size/2, (int)MathF.Round(smoothPos.Y) - (int)toRender[i].Size/2, (int)toRender[i].Size, (int)toRender[i].Size, toRender[i].Color);
 
                     } else if(toRender[i].RenderType == RendererBehaviour.VisualShapeType.Circle)
                     {
                      
-                        DrawCircle((int)MathF.Round(toRender[i].Owner.GlobalPosition.X), (int)MathF.Round(toRender[i].Owner.GlobalPosition.Y), toRender[i].Size, toRender[i].Color);
+                        DrawCircle((int)MathF.Round(smoothPos.X), (int)MathF.Round(smoothPos.Y), toRender[i].Size, toRender[i].Color);
                     }
 
                 }
                 
             EndShaderMode();
-            EndMode2D();            
+            EndMode2D();
             EndTextureMode();
 
 
             BeginDrawing();
 
-            BeginShaderMode(PixelateShader);
+            //BeginShaderMode(PixelateShader);
                 ClearBackground(Color.Black);
 
                 var size = new Vector2(texture2D.Texture.Width, texture2D.Texture.Height);
@@ -284,12 +273,14 @@ public static class GameController
 
                 DrawTexturePro(texture2D.Texture, new Rectangle(0, 0, size), new Rectangle((new Vector2(GetScreenWidth(), GetScreenHeight()) - screenSize ) / 2, screenSize), Vector2.Zero, 0, Color.White);
 
-            EndShaderMode();
+            //EndShaderMode();
             
 
             // Draw all the Debug Windows
             
             #if DEBUG    
+
+                
 
                 RlImGui.Begin();
 
@@ -397,7 +388,7 @@ public static class GameController
     /// </summary>
     public static void AddEntity(Entity entity)
     {
-        Entities.Add(entity.Id, entity);
+        Entities.Add(entity.ID, entity);
     }
 
     /// <summary>

@@ -11,6 +11,7 @@ using System.Collections;
 using PatoframeWork.Inspector;
 using rlImGui_cs;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Patoframework.Inspector;
 using static ImGui;
@@ -38,6 +39,10 @@ public static class InspectorVisual
 
     static string searchEnding = "";
     static int searchMode = 0;
+
+    
+
+
     public static void ImGUIBeh()
     {
         
@@ -130,9 +135,9 @@ public static class InspectorVisual
                     if(MenuItem("Open Sprite Importer"))
                     {
                         ShowFileImporter = true;
-                        if(!Path.Exists(GameController.ProjectLoc + "/Resources/Images/ImageData.pfdata"))
+                        if(!Path.Exists(GameController.ProjectLoc + "/Resources/Images/ImageData.pfimg"))
                         {
-                            File.Create(GameController.ProjectLoc + "/Resources/Images/ImageData.pfdata");
+                            File.Create(GameController.ProjectLoc + "/Resources/Images/ImageData.pfimg");
                         }
                     }
 
@@ -141,7 +146,7 @@ public static class InspectorVisual
                     if(MenuItem("Load Textures from file"))
                     {
                         searchMode = 1;
-                        searchEnding = ".pfdata";
+                        searchEnding = ".pfimg";
 
                         SaveLocation = GameController.ProjectLoc;
 
@@ -157,7 +162,7 @@ public static class InspectorVisual
                     if(MenuItem("Save Textures to file"))
                     {
                         searchMode = 1;
-                        searchEnding = ".pfdata";
+                        searchEnding = ".pfimg";
 
                         SaveLocation = GameController.ProjectLoc;
 
@@ -226,8 +231,8 @@ public static class InspectorVisual
 
         DrawEntityInspector();
         
-        SetNextWindowSize(Vector2.One * 300, ImGuiCond.Once);
-        SetNextWindowPos(Vector2.One * 100, ImGuiCond.Once);
+        SetNextWindowSize(Vector2.One * 300, ImGuiCond.FirstUseEver);
+        SetNextWindowPos(Vector2.One * 100, ImGuiCond.FirstUseEver);
         
         Begin("Entity Info");
 
@@ -238,9 +243,6 @@ public static class InspectorVisual
             SeparatorText("");
 
             DrawBehaviourSelector();
-
-            
-
         }
         End();
 
@@ -249,6 +251,8 @@ public static class InspectorVisual
         if(ShowFileImporter) DrawFileImporter();
 
         DrawLoadedImageList();
+
+        DrawSavedEntities();
         
     }
 
@@ -333,8 +337,8 @@ public static class InspectorVisual
     static void DrawEntityInspector()
     {
 
-        SetNextWindowSize(Vector2.One * 300, ImGuiCond.Once);
-        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitX * 400, ImGuiCond.Once);
+        SetNextWindowSize(Vector2.One * 300, ImGuiCond.FirstUseEver);
+        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitX * 400, ImGuiCond.FirstUseEver);
 
         Begin("Entities");
 
@@ -349,10 +353,29 @@ public static class InspectorVisual
         PopStyleColor();
 
         SeparatorText("Entities -- ");
+        BeginChild("EntititesList", new Vector2(-1, -1), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY);
 
         foreach (var entity in GameController.GetAllEntities().Where((res) => res.Parent == 0))
         {
             DrawRecursiveList(entity);
+        }
+        EndChild();
+
+        if(BeginDragDropTarget())
+        {
+            var data = AcceptDragDropPayload("EntityID");
+
+            unsafe
+            {
+                if(data.NativePtr != null)
+                {
+                    ulong dataPtr = ((ulong*)data.Data.ToPointer())[0];
+
+                    GameController.FindEntity(dataPtr).SetParent(0);
+                }
+            }
+            
+            EndDragDropTarget();
         }
 
         End();
@@ -712,13 +735,14 @@ public static class InspectorVisual
     // Draw Entity List
     static void DrawRecursiveList(Entity REntity)
     {
+        PushID(REntity.ID.ToString());
         if (REntity.Childs.Count > 0)
         {
-            if (TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth))
+            if (TreeNodeEx($"{REntity.Name}###{REntity.ID}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen))
             {
                 if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.ID))
                 {
                     if (MenuItem("Duplicate"))
                     {
@@ -743,6 +767,38 @@ public static class InspectorVisual
                     EndPopup();
                 }
 
+                if (BeginDragDropSource())
+                {
+                    unsafe
+                    {
+                        ulong data = REntity.ID;
+                        SetDragDropPayload("EntityID", (IntPtr)(&data), sizeof(ulong));
+                    }
+                    
+                    Text(Path.GetFileName("Entity ID: " + REntity.ID));
+
+                    EndDragDropSource();
+                }
+
+                if(BeginDragDropTarget())
+                {
+                    var data = AcceptDragDropPayload("EntityID");
+
+                    unsafe
+                    {
+                        if(data.NativePtr != null)
+                        {
+                            ulong dataPtr = ((ulong*)data.Data.ToPointer())[0];
+
+                            GameController.FindEntity(dataPtr).SetParent(REntity);
+                        }
+
+                    }
+                    
+
+                    EndDragDropTarget();
+                }
+
                 foreach (var ch in REntity.Childs.ToList())
                 {
                     DrawRecursiveList(GameController.FindEntity(ch));
@@ -754,7 +810,7 @@ public static class InspectorVisual
             {
                 if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.ID))
                 {
                     if (MenuItem("Duplicate"))
                     {
@@ -774,16 +830,50 @@ public static class InspectorVisual
 
                     EndPopup();
                 }
+
+                if (BeginDragDropSource())
+                {
+                    unsafe
+                    {
+                        ulong data = REntity.ID;
+                        SetDragDropPayload("EntityID", (IntPtr)(&data), sizeof(ulong));
+                    }
+                    
+                    Text(Path.GetFileName("Entity ID: " + REntity.ID));
+
+                    EndDragDropSource();
+                }
+
+                if(BeginDragDropTarget())
+                {
+                    var data = AcceptDragDropPayload("EntityID");
+
+                    unsafe
+                    {
+                        if(data.NativePtr != null)
+                        {
+                            ulong dataPtr = ((ulong*)data.Data.ToPointer())[0];
+
+                            GameController.FindEntity(dataPtr).SetParent(REntity);
+                        }
+
+                    }
+                    
+
+                    EndDragDropTarget();
+                }
             }
+
+            
 
         }
         else
         {
-            if (TreeNodeEx($"{REntity.Name}###{REntity.Id}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.SpanFullWidth))
+            if (TreeNodeEx($"{REntity.Name}###{REntity.ID}", (DEBUG_Selected == REntity ? ImGuiTreeNodeFlags.Selected : ImGuiTreeNodeFlags.None) | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.SpanFullWidth))
             {
                 if (IsItemClicked(ImGuiMouseButton.Left)) DEBUG_Selected = REntity;
 
-                if (BeginPopupContextItem("ContextMenu###" + REntity.Id))
+                if (BeginPopupContextItem("ContextMenu###" + REntity.ID))
                 {
                     if (MenuItem("Duplicate"))
                     {
@@ -809,7 +899,43 @@ public static class InspectorVisual
 
                 TreePop();
             }
+
+            if (BeginDragDropSource())
+            {
+                unsafe
+                {
+                    ulong data = REntity.ID;
+                    SetDragDropPayload("EntityID", (IntPtr)(&data), sizeof(ulong));
+                }
+                
+                Text(Path.GetFileName("Entity ID: " + REntity.ID));
+
+                EndDragDropSource();
+            }
+
+            if(BeginDragDropTarget())
+            {
+                var data = AcceptDragDropPayload("EntityID");
+
+                unsafe
+                {
+                    if(data.NativePtr != null)
+                    {
+                        ulong dataPtr = ((ulong*)data.Data.ToPointer())[0];
+
+                        GameController.FindEntity(dataPtr).SetParent(REntity);
+                    }
+
+                }
+                
+
+                EndDragDropTarget();
+            }
         }
+
+        
+
+        PopID();
     }
 
 
@@ -841,14 +967,18 @@ public static class InspectorVisual
                 //On clicked File/Directory
                 if (Button(Path.GetFileName(file)))
                 {
-                    FilePath = Path.GetFullPath(file);
+                    
 
                     if (!isDirectory && fileType == Path.GetExtension(file))
                     {
+                        FilePath = Path.GetFullPath(file);
                         PopStyleColor();
                         EndChild();
 
                         return true;
+                    } else if(isDirectory)
+                    {
+                        FilePath = Path.GetFullPath(file);
                     }
                 }
                 PopStyleColor();
@@ -915,10 +1045,10 @@ public static class InspectorVisual
             else
             if(searchMode == 1)
             {
-                var newFile = File.Create(SaveLocation + "/" + SaveName + ".pfdata");
+                var newFile = File.Create(SaveLocation + "/" + SaveName + ".pfimg");
                 newFile.Close();
 
-                SpriteManager.SaveTextureDataFile(SpriteManager.LoadedImages, SaveLocation + "/" + SaveName + ".pfdata");
+                SpriteManager.SaveTextureDataFile(SpriteManager.LoadedImages, SaveLocation + "/" + SaveName + ".pfimg");
             }
         }
     }
@@ -1062,7 +1192,7 @@ public static class InspectorVisual
                 {
                     Console.WriteLine("Dropped: " + file);
 
-                    if(Path.GetExtension(file) == ".pfdata")
+                    if(Path.GetExtension(file) == ".pfimg")
                     {
 
 
@@ -1223,8 +1353,8 @@ public static class InspectorVisual
 
     static void DrawLoadedImageList()
     {
-        SetNextWindowSize(Vector2.One * 400, ImGuiCond.Once);
-        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitY * 400, ImGuiCond.Once);
+        SetNextWindowSize(Vector2.One * 400, ImGuiCond.FirstUseEver);
+        SetNextWindowPos(Vector2.One * 100 + Vector2.UnitY * 400, ImGuiCond.FirstUseEver);
 
         Begin("Loaded Image List", ImGuiWindowFlags.AlwaysVerticalScrollbar);
         
@@ -1264,7 +1394,7 @@ public static class InspectorVisual
 
 
                 PopID();
-                EndChild();
+            EndChild();
 
 
             lenght += 100;
@@ -1283,15 +1413,41 @@ public static class InspectorVisual
         End();
     }
 
+    static void DrawSavedEntities()
+    {
+        SetNextWindowSize(Vector2.One * 300, ImGuiCond.FirstUseEver);
+        SetNextWindowPos(Vector2.One * 800 + Vector2.UnitX * 200, ImGuiCond.FirstUseEver);
+
+        Begin("Saved Entities");
+        
+        Text("Drag in to save Entities. Drag out to instantiate them in the world");
+
+        foreach (var entity in PrefabLoader.savedEntities)
+        {
+            if(BeginChild(entity.Name, new Vector2(200), ImGuiChildFlags.Borders))
+            {
+                Text("Origin ID:");
+                Text(entity.ID.ToString());
+
+                Button(entity.Name);
+
+                
+                EndChild();
+            }
+            
+        }
+
+
+        End();
+    }
+
 
     public static void DrawSelectedPos()
     {
         if (DEBUG_Selected != null)
-            Raylib.DrawCircle((int)DEBUG_Selected.GlobalPosition.X, (int)DEBUG_Selected.GlobalPosition.Y, 10, Raylib.ColorAlpha(Color.White, 0.4f));
+            Raylib.DrawCircle((int)DEBUG_Selected.GlobalPosition.X, -(int)DEBUG_Selected.GlobalPosition.Y, 10, Raylib.ColorAlpha(Color.White, 0.4f));
     }
 
-
-    static Vector2 lastMousePos = Vector2.Zero;
     public static void ClickAndDrag()
     {
         CameraManager.I.freeRoam = !GetIO().WantCaptureMouse;
@@ -1305,26 +1461,33 @@ public static class InspectorVisual
 
         if(GetIO().WantCaptureMouse) return;
 
-        if(Raylib.IsMouseButtonPressed(MouseButton.Right))
-        {
-            lastMousePos = Raylib.GetMousePosition();
-        }
-
         if(Raylib.IsMouseButtonDown(MouseButton.Right))
         {
-            CameraManager.I.Cam.Target = CameraManager.I.Cam.Target - (Raylib.GetMousePosition() - lastMousePos);
-           // LightsManager
-            
-            lastMousePos = Raylib.GetMousePosition();
+            var diff = Raylib.GetMouseDelta();
+            diff = (diff / 10) * GameController.PixelRatio;
+
+            CameraManager.I.Cam.Target = CameraManager.I.Cam.Target - diff;
         }
 
-        if(Raylib.IsMouseButtonDown(MouseButton.Left))
+        if(Raylib.IsMouseButtonPressed(MouseButton.Left) && Raylib.IsKeyDown(KeyboardKey.LeftControl))
         {
-            var MousePos = Raylib.GetMousePosition() + CameraManager.I.Cam.Target + CameraManager.I.Cam.Offset;
+            var diff = Raylib.GetMousePosition() * GameController.PixelRatio / 10;
+
+            var MousePos = diff + (CameraManager.I.Cam.Target - CameraManager.I.Cam.Offset);
 
             var ent = GameController.GetAllRenderers().Where(res => Raymath.Vector2Distance(res.Owner.GlobalPosition, MousePos) < res.Size).OrderByDescending(res => Raymath.Vector2Distance(res.Owner.GlobalPosition, MousePos)).FirstOrDefault((RendererBehaviour?)null);
 
             DEBUG_Selected = ent?.Owner ?? null;
+        } else
+        if(Raylib.IsMouseButtonDown(MouseButton.Left))
+        {
+            if(DEBUG_Selected != null)
+            {
+                var diff = Raylib.GetMouseDelta();
+                diff = (diff / 10) * GameController.PixelRatio;
+
+                DEBUG_Selected.GlobalPosition += diff;
+            }
         }
     }
 

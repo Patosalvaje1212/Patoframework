@@ -6,6 +6,7 @@ using PatoframeWork.Inspector;
 
 namespace PatoframeWork;
 
+
 public class Entity
 {
     /// <summary>
@@ -22,7 +23,7 @@ public class Entity
     /// </remarks>
 
     [InspectorShowOrder(6), InspectorNonEditable]
-    public ulong Id { get; private set; }
+    public ulong ID { get; private set; }
 
     /// <summary>
     /// Id of the Parent Entity.
@@ -136,12 +137,12 @@ public class Entity
         }
     }
 
+
     /// <summary>
-    /// This constructor initializes a new Entity.
+    /// This constructor initializes a new Entity. Used only when preloading entities
     /// </summary>
-    public Entity()
+    Entity()
     {
-        Setup();
     }
 
     /// <summary>
@@ -168,7 +169,7 @@ public class Entity
 
     void Setup()
     {
-        Id = GameController.GetLowestFreeID();
+        ID = GameController.GetLowestFreeID();
 
         GameController.AddEntity(this);
 
@@ -196,7 +197,7 @@ public class Entity
     {
         if(!isInstant) OnDelete();
 
-        if(GameController.TryFindEntity(Id) is not null)
+        if(GameController.TryFindEntity(ID) is not null)
         {
             this.SetParent(null);
             
@@ -222,7 +223,7 @@ public class Entity
                 Behaviours[i].RemoveBehaviour();
             }
 
-            GameController.RemoveEntity(Id);
+            GameController.RemoveEntity(ID);
         }
         else throw new InvalidDataException("Tried to delete a non-existing Entity");
     }
@@ -254,14 +255,14 @@ public class Entity
     public void SetParent(Entity? newParent)
     {
         if(Parent != 0) 
-                GameController.FindEntity(Parent).Childs.Remove(Id);
+                GameController.FindEntity(Parent).Childs.Remove(ID);
 
         if(newParent != null)
         {
             if(!IsMyChild(newParent) && newParent != this)
             {
-                newParent.Childs.Add(this.Id);
-                Parent = newParent.Id;
+                newParent.Childs.Add(this.ID);
+                Parent = newParent.ID;
 
             } else
             LogManager.LogError("Cannot set a child of an Entity as its Parent");
@@ -281,22 +282,26 @@ public class Entity
     /// </remarks>
     public void SetParent(ulong newParentID)
     {
-        if(Parent != 0) 
-            GameController.FindEntity(Parent).Childs.Remove(Id);
+        if(newParentID == Parent) return;
 
-        if(newParentID != 0)
+        if(Parent != 0)
+            GameController.FindEntity(Parent).Childs.Remove(ID);
+
+        if(newParentID != 0 && newParentID != ID)
         {
-            if(!IsMyChild(newParentID) && newParentID != Id)
+            if(!IsMyChild(newParentID))
             {
-                GameController.FindEntity(newParentID).Childs.Add(this.Id);
+                GameController.FindEntity(newParentID).Childs.Add(this.ID);
                 Parent = newParentID;
 
             } else
-            LogManager.LogError("Cannot set a child of an Entity as its Parent");
+            {
+                Parent = 0;
+                LogManager.LogError("Cannot set a child of an Entity as its Parent");
+            }
             
         } else
-        {
-            
+        {   
             Parent = 0;
         }
 
@@ -328,7 +333,7 @@ public class Entity
     /// </summary>
     public bool IsMyChild(Entity entity, bool SearchRecursively = true)
     {
-        if(Childs.Contains(entity.Id))
+        if(Childs.Contains(entity.ID))
         {
             return true;
         } else
@@ -349,7 +354,7 @@ public class Entity
     /// </summary>
     public bool IsMyChild(ulong entityId, bool SearchRecursively = true)
     {
-        if(Childs.Contains(Id))
+        if(Childs.Contains(ID))
         {
             return true;
         } else
@@ -396,7 +401,7 @@ public class Entity
         {
             var childEnt = GameController.FindEntity(InitChilds[i]).Duplicate();
 
-            childEnt.SetParent(newEnt.Id);
+            childEnt.SetParent(newEnt.ID);
         }
 
 

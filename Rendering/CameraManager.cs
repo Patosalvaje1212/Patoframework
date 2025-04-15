@@ -121,9 +121,8 @@ public class CameraManager
     public void ResetCamera()
     {
         Cam.Target = Vector2.Zero;
-        Cam.Offset = new Vector2( Raylib.GetScreenWidth(), Raylib.GetScreenHeight() )/ 2;
+        Cam.Offset = GameController.WindowPixelSize / 2;
         Cam.Rotation = 0f;
         Cam.Zoom = 1f;
-
     }
 }
