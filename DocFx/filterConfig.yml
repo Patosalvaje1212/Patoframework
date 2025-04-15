@@ -1,3 +1,4 @@
+### YamlMime:ManagedReference
 apiRules:
 - exclude:
     # mentioning types from System.* namespace

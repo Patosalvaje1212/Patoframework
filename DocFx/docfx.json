@@ -1,50 +1,46 @@
 {
-    "metadata": [
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
         {
-            "src": [
-                {
-                    "files": [ "**/**.csproj" ],
-                    "src": ".."
-                }
-            ],
-            "dest": "reference",
-            "disableGitFeatures": false,
-            "disableDefaultFilter": false,
-            "filter": "filterConfig.yml"
+          "src": "../",
+          "files": [
+            "**/*.csproj"
+          ]
         }
-    ],
-    "build": {
-        "content": [
-            {
-                "files": [
-                    "reference/**.yml",
-                    "reference/index.md"
-                ]
-            },
-            {
-                "files": [
-                    "Concepts/toc.yml",
-                    "Concepts/**.md",
-                    "Concepts/**/toc.yml",
-                    "toc.yml",
-                    "*.md"
-                ]
-            }
-        ],
-        "resource": [
-            {
-                "files": [ "images/**" ]
-            }
-        ],
-        "dest": "../docs",
-        "globalMetadataFiles": [],
-        "fileMetadataFiles": [],
-        "template": [ "default" ],
-        "postProcessors": [],
-        "markdownEngineName": "markdig",
-        "noLangKeyword": false,
-        "keepFileLink": false,
-        "cleanupCacheHistory": false,
-        "disableGitFeatures": false
+      ],
+      "dest": "api"
     }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "exclude": [
+          "docs/**"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ]
+      }
+    ],
+    "output": "../docs",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "Patoframework",
+      "_appTitle": "Patoframework",
+      "_enableSearch": true,
+      "pdf": true
+    }
+  }
 }
