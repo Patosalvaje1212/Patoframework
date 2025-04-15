@@ -1,46 +1,44 @@
 {
-  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
-  "metadata": [
-    {
-      "src": [
+    "metadata": [
         {
-          "src": "../",
-          "files": [
-            "**/*.csproj"
-          ]
+            "src": [
+                {
+                    "files": [ "**/**.csproj" ],
+                    "src": ".."
+                }
+            ],
+            "dest": "reference",
+            "disableGitFeatures": false,
+            "disableDefaultFilter": false,
+            "filter": "filterConfig.yml"
         }
-      ],
-      "dest": "api"
-    }
-  ],
-  "build": {
-    "content": [
-      {
-        "files": [
-          "**/*.{md,yml}"
+    ],
+    "build": {
+        "content": [
+            {
+                "files": [
+                    "reference/**.yml",
+                    "reference/index.md"
+                ]
+            },
+            {
+                "files": [
+                    "Concepts/toc.yml",
+                    "Concepts/**.md",
+                    "Concepts/**/toc.yml",
+                    "toc.yml",
+                    "*.md"
+                ]
+            }
         ],
-        "exclude": [
-          "docs/**"
-        ]
-      }
-    ],
-    "resource": [
-      {
-        "files": [
-          "images/**"
-        ]
-      }
-    ],
-    "output": "../docs",
-    "template": [
-      "default",
-      "modern"
-    ],
-    "globalMetadata": {
-      "_appName": "Patoframework",
-      "_appTitle": "Patoframework",
-      "_enableSearch": true,
-      "pdf": true
+        "resource": [
+            {
+                "files": [ "images/**" ]
+            }
+        ],
+        "template": [ "default", "modern" ],
+        "dest": "../docs",
+        "disableGitFeatures": false,
+        "enableSearch": true,
     }
-  }
 }
